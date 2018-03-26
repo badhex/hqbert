@@ -3,7 +3,6 @@ import asyncio
 from multiprocessing.pool import ThreadPool
 from googleapiclient.discovery import build
 import time
-# import pyscreenshot as ImageGrab
 import pytesseract
 from PIL import ImageGrab, ImageEnhance
 
@@ -59,7 +58,7 @@ def calc_weight_google_results(question, answers):
 	a_num = 0
 	for a in answers:
 		results = google_search( question.replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ), exactTerms=a.replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ) )
-		result[a_num] = (a, a_num+1, int( results['searchInformation']['totalResults'] ))
+		result[a_num] = (a, a_num, int( results['searchInformation']['totalResults'] ))
 		total_i += int( results['searchInformation']['totalResults'] )
 		a_num += 1
 	# now that we have all the answers, figure out the percentages
@@ -78,7 +77,7 @@ def get_text(kind, box, showcap=False):
 	if showcap:
 		im.show()
 
-	if G.debug:
+	if G.debug or True:
 		contrast = ImageEnhance.Contrast( im )
 		im = contrast.enhance(2)
 
@@ -129,13 +128,10 @@ async def my_background_task():
 		if sum(total) > 3100000:
 			if not waitforblack:
 				if not resultscreen:
-					weight = []
 					start_time = time.time()
 					print( "Found question!" )
 					if G.debug:
 						await asyncio.sleep(1)
-					if not G.debug:
-						await G.client.send_message( channel, "A question! processing..." )
 					async_question = G.pool.apply_async( get_text, ('question', Config.question_bbox, False) )
 					async_answers = G.pool.apply_async( get_text, ('answers', Config.answers_bbox, False) )
 					q = async_question.get()
@@ -143,16 +139,20 @@ async def my_background_task():
 					print( "question: ", q, " answers: ", ans )
 					# if we only get two answers here, we were at the results screen and need to abort
 					if len(ans) != 3 or not q or not q.endswith('?'):
-						# Abort abort abort!!!
-						if not G.debug:
-							await G.client.send_message( channel, "I couldn't read the question or answers, sorry!" )
 						print("ERROR Reading question or answers! Trying again...")
 						continue
 					else:
 						if not G.debug:
-							await G.client.send_message( channel, "The question is, \"" + q + "\"\r\n" + '\r\n'.join([str(i) for i in ans]) )
+							msg = "```ini\r\n[ " + q + " ]\r\n"
+							i = 0
+							for a in ans:
+								msg += "#" + str(i+1) + " - " + a + "\r\n"
+								i += 1
+							msg += "```"
+							await G.client.send_message( channel, msg )
 
 						# if we match at a glance, we're probably correct
+						fullsearch = False
 						# search google for the question and count the occurances of the answer
 						result = calc_weight_google_glance( q, ans )
 						sorted_by_second = sorted( result, key=lambda tup: tup[3], reverse=(any( word in q for word in Config.reversewords )) )
@@ -160,15 +160,26 @@ async def my_background_task():
 						print("Matched at a glance!")
 						print( "--- %s seconds ---" % (round( time.time() - start_time, 2 )), "calc_weight_google_glance:", "{:.1%}".format(confidence), num, answer, "raw:", result )
 						if raw < 10 and confidence < 0.34:
+							fullsearch = True
 							# search google for the question including the answer and see if the answers are in the results
-							result = calc_weight_google_results(q, ans)
-							sorted_by_second = sorted( result, key=lambda tup: tup[3], reverse=(any(word in q for word in Config.reversewords))  )
+							result2 = calc_weight_google_results(q, ans)
+							sorted_by_second = sorted( result2, key=lambda tup: tup[3], reverse=(any(word in q for word in Config.reversewords))  )
 							answer, num, raw, confidence = sorted_by_second.pop()
 							print( "Matched after full search!" )
 							print( "--- %s seconds ---" % (round(time.time() - start_time, 2)), "calc_weight_google_results:", "{:.1%}".format(confidence), num, answer, "raw:", result )
 
 						if not G.debug:
-							await G.client.send_message( channel, "I'm " + confidence + " sure the answer is - #" + num + " " + answer )
+							await G.client.send_message( channel, "I'm " + ("{:.1%}".format(confidence)) + " sure the answer is - #" + str(num+1) + " " + answer )
+
+							msg = "```Google quick search:\r\n"
+							for r in result:
+								msg += "# %s - %6s - %s\r\n" % (str(r[1]+1), "{:.1%}".format(r[3]), r[0] )
+							if fullsearch:
+								msg += "\r\nGoogle result count:\r\n"
+								for r in result2:
+									msg += "# %s - %6s - %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0])
+							msg += "```"
+							await G.client.send_message( channel, msg )
 						resultscreen = True
 						waitforblack = True
 				elif answer and num:
@@ -192,9 +203,7 @@ async def my_background_task():
 				else:
 					resultscreen = False
 		else:
-			# print("Waiting...")
 			waitforblack = False
-			# await asyncio.sleep( 11 )
 
 		await asyncio.sleep( 0.5 )
 
