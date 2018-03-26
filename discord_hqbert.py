@@ -16,7 +16,7 @@ from config import Config
 class G:
 	client = discord.Client()
 	pool = ThreadPool( processes=12 )
-	debug = False
+	debug = Config.debug
 
 def google_search(search_term, **kwargs):
 	service = build( "customsearch", "v1", developerKey=Config.gapi )
@@ -123,8 +123,8 @@ async def my_background_task():
 	while True:
 		total = (0, 0, 0)
 		px = ImageGrab.grab().load()
-		for y in range( 150, 950, 10 ):
-			for x in range( 1000, 1600, 10 ):
+		for y in Config.question_detection_y_range:
+			for x in Config.question_detection_x_range:
 				color = px[x, y]
 				total = tuple( map( sum, zip( total, color ) ) )
 		if G.debug:
@@ -192,6 +192,8 @@ async def my_background_task():
 					correct = 0
 					for i in range(3):
 						green = [0,0,0]
+
+						# such hardcoding, very magic number
 						for y in range( 640+(i*115), 680+ (i*115), 1 ):
 							for x in range( 1010, 1030, 1 ):
 								color = px[x, y]
