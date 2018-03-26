@@ -1,10 +1,14 @@
+#!/usr/bin/env python3
+
 import discord
 import asyncio
 from multiprocessing.pool import ThreadPool
 from googleapiclient.discovery import build
 import time
 import pytesseract
-from PIL import ImageGrab, ImageEnhance
+from PIL import ImageEnhance
+import pyscreenshot as ImageGrab
+
 
 from config import Config
 
