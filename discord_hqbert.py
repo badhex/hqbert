@@ -13,12 +13,64 @@ from config import Config
 class G:
 	client = discord.Client()
 	pool = ThreadPool( processes=12 )
-	debug = True
+	debug = False
 
 def google_search(search_term, **kwargs):
 	service = build( "customsearch", "v1", developerKey=Config.gapi )
 	res = service.cse().list( q=search_term, cx=Config.cseid, **kwargs ).execute()
 	return res
+
+
+# determine the weight of answer by search results title and snippits
+# takes:  question as string, answers as list of strings
+# returns: list [(answer, number, raw, confidence), (answer, number, raw, confidence), (answer, number, raw, confidence)]
+def calc_weight_google_glance(question, answers):
+	question = question.replace('"', "").replace(',', "").replace("‘", "").replace(".", "")
+	results = google_search( question )
+	result = [(),(),()]
+	total_i = 0
+	for item in results["items"]:
+		a_num = 0
+		for a in answers:
+			junk, junk, a_i = result[a_num] if len(result[a_num]) else (0,0,0)
+			add1 = item['title'].lower().count(a.lower().replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ))
+			add2 = item['snippet'].lower().count(a.lower().replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ))
+			a_i += add1 + add2
+			total_i += add1 + add2
+			result[a_num] = (a, a_num, a_i)
+			a_num += 1
+	# now that we have all the answers, figure out the percentages
+	a_num = 0
+	for r in result:
+		a, n, a_i = r
+		percent = (float(a_i) / float(total_i)) if total_i > 0 else 0.0
+		result[a_num] = (a, n, a_i, percent)
+		a_num += 1
+
+	return result
+
+# determine the weight of answer by number of search results
+# takes:  question as string, answers as list of strings
+# returns: list [(answer, number, raw, confidence), (answer, number, raw, confidence), (answer, number, raw, confidence)]
+def calc_weight_google_results(question, answers):
+	question = question.replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" )
+	result = [(),(),()]
+	total_i = 0
+	a_num = 0
+	for a in answers:
+		results = google_search( question.replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ), exactTerms=a.replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ) )
+		result[a_num] = (a, a_num+1, int( results['searchInformation']['totalResults'] ))
+		total_i += int( results['searchInformation']['totalResults'] )
+		a_num += 1
+	# now that we have all the answers, figure out the percentages
+	a_num = 0
+	for r in result:
+		a, n, a_i = r
+		percent = (float(a_i) / float(total_i)) if total_i > 0 else 0.0
+		result[a_num] = (a, n, a_i, percent)
+		a_num += 1
+
+	return result
 
 
 def get_text(kind, box, showcap=False):
@@ -74,7 +126,7 @@ async def my_background_task():
 				total = tuple( map( sum, zip( total, color ) ) )
 		if G.debug:
 			print("color debug: ", total, " big total: ", sum(total))
-		if sum(total) > 3000000:
+		if sum(total) > 3100000:
 			if not waitforblack:
 				if not resultscreen:
 					weight = []
@@ -90,7 +142,7 @@ async def my_background_task():
 					ans = async_answers.get()
 					print( "question: ", q, " answers: ", ans )
 					# if we only get two answers here, we were at the results screen and need to abort
-					if len(ans) < 3 or not q:
+					if len(ans) != 3 or not q or not q.endswith('?'):
 						# Abort abort abort!!!
 						if not G.debug:
 							await G.client.send_message( channel, "I couldn't read the question or answers, sorry!" )
@@ -99,21 +151,24 @@ async def my_background_task():
 					else:
 						if not G.debug:
 							await G.client.send_message( channel, "The question is, \"" + q + "\"\r\n" + '\r\n'.join([str(i) for i in ans]) )
-						# search google for the question including the answer and see if the answers are in the results
-						total = 0
-						for a in ans:
-							awords = a.split()
-							aclean = [word for word in awords if word.lower() not in Config.stopwords]
-							terms = " ".join(aclean)
-							results = google_search(q.replace('"', "").replace(',', "").replace("‘", "").replace(".", ""), hl='eng', lr="lang_en", exactTerms=terms )
-							weight.append((a, int(results['searchInformation']['totalResults'])))
-							total += int(results['searchInformation']['totalResults'])
-						sorted_by_second = sorted( weight, key=lambda tup: tup[1], reverse=(any(word in q for word in Config.reversewords))  )
-						answer, num = sorted_by_second.pop()
-						confidence = "{:.1%}".format((float(num) / float(total)) if total > 0 else 0.0)
-						print( "--- %s seconds ---" % (round(time.time() - start_time, 2)), "Based on full search:", confidence, answer, "totals:", weight )
+
+						# if we match at a glance, we're probably correct
+						# search google for the question and count the occurances of the answer
+						result = calc_weight_google_glance( q, ans )
+						sorted_by_second = sorted( result, key=lambda tup: tup[3], reverse=(any( word in q for word in Config.reversewords )) )
+						answer, num, raw, confidence = sorted_by_second.pop()
+						print("Matched at a glance!")
+						print( "--- %s seconds ---" % (round( time.time() - start_time, 2 )), "calc_weight_google_glance:", "{:.1%}".format(confidence), num, answer, "raw:", result )
+						if raw < 10 and confidence < 0.34:
+							# search google for the question including the answer and see if the answers are in the results
+							result = calc_weight_google_results(q, ans)
+							sorted_by_second = sorted( result, key=lambda tup: tup[3], reverse=(any(word in q for word in Config.reversewords))  )
+							answer, num, raw, confidence = sorted_by_second.pop()
+							print( "Matched after full search!" )
+							print( "--- %s seconds ---" % (round(time.time() - start_time, 2)), "calc_weight_google_results:", "{:.1%}".format(confidence), num, answer, "raw:", result )
+
 						if not G.debug:
-							await G.client.send_message( channel, "I'm " + confidence + " sure the answer is - #" + str(ans.index(answer)+1) + " " + answer )
+							await G.client.send_message( channel, "I'm " + confidence + " sure the answer is - #" + num + " " + answer )
 						resultscreen = True
 						waitforblack = True
 				elif answer and num:
