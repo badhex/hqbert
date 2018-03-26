@@ -4,7 +4,8 @@ from multiprocessing.pool import ThreadPool
 from googleapiclient.discovery import build
 import time
 import pytesseract
-from PIL import ImageGrab, ImageEnhance
+from PIL import ImageGrab, ImageEnhance, ImageOps
+from datetime import datetime, timedelta
 
 from config import Config
 
@@ -72,18 +73,23 @@ def calc_weight_google_results(question, answers):
 	return result
 
 
-def get_text(kind, box, showcap=False):
+def get_text(kind, box, showcap=False, invert_img=False):
 	im = ImageGrab.grab( bbox=box )
-	if showcap:
-		im.show()
 
 	if G.debug or True:
 		contrast = ImageEnhance.Contrast( im )
 		im = contrast.enhance(2)
 
+	if invert_img:
+		im = im.convert('L')
+		im = ImageOps.invert(im)
+
+	if showcap:
+		im.show()
+
 	if kind is 'question':
 		return (" ".join( pytesseract.image_to_string( im ).split() )).replace( "— ", "" )
-	else:
+	elif kind is 'answers':
 		answers = pytesseract.image_to_string( im, lang='eng', config='-psm 3' ).splitlines()
 		if not answers:
 			# fix for single character questions
@@ -100,112 +106,148 @@ def get_text(kind, box, showcap=False):
 					answers.append(ans[0])
 					count += 1
 		return list( filter( None, answers ) )
+	elif kind is 'multiline':
+		return pytesseract.image_to_string( im, lang='eng', config='-psm 3' ).splitlines()
+	else:
+		# just return the data that is in our box
+		return " ".join( pytesseract.image_to_string( im ).split() )
 
 
 async def my_background_task():
 	await G.client.wait_until_ready()
 	await asyncio.sleep( 3 )
 	channel = discord.Object( id=Config.discord_channel )
-	print( "Waiting for question..." )
-	if not G.debug:
-		await G.client.send_message( channel, "Hey guys, It's HQ time!!!!" )
-		await G.client.change_presence( game=discord.Game( name='HQ Trivia' ) )
+	print( "Starting..." )
 	waitforblack=False
 	resultscreen=False
+	gamestarted=False
 	answer = ""
 	ans = []
 	num = 0
 
 	while True:
-		total = (0, 0, 0)
-		px = ImageGrab.grab().load()
-		for y in range( 150, 950, 10 ):
-			for x in range( 1000, 1600, 10 ):
-				color = px[x, y]
-				total = tuple( map( sum, zip( total, color ) ) )
-		if G.debug:
-			print("color debug: ", total, " big total: ", sum(total))
-		if sum(total) > 3100000:
-			if not waitforblack:
-				if not resultscreen:
-					start_time = time.time()
-					print( "Found question!" )
-					if G.debug:
-						await asyncio.sleep(1)
-					async_question = G.pool.apply_async( get_text, ('question', Config.question_bbox, False) )
-					async_answers = G.pool.apply_async( get_text, ('answers', Config.answers_bbox, False) )
-					q = async_question.get()
-					ans = async_answers.get()
-					print( "question: ", q, " answers: ", ans )
-					# if we only get two answers here, we were at the results screen and need to abort
-					if len(ans) != 3 or not q or not q.endswith('?'):
-						print("ERROR Reading question or answers! Trying again...")
-						continue
-					else:
-						if not G.debug:
-							msg = "```ini\r\n[ " + q + " ]\r\n"
-							i = 0
-							for a in ans:
-								msg += "#" + str(i+1) + " - " + a + "\r\n"
-								i += 1
-							msg += "```"
-							await G.client.send_message( channel, msg )
-
-						# if we match at a glance, we're probably correct
-						fullsearch = False
-						# search google for the question and count the occurances of the answer
-						result = calc_weight_google_glance( q, ans )
-						sorted_by_second = sorted( result, key=lambda tup: tup[3], reverse=(any( word in q for word in Config.reversewords )) )
-						answer, num, raw, confidence = sorted_by_second.pop()
-						print("Matched at a glance!")
-						print( "--- %s seconds ---" % (round( time.time() - start_time, 2 )), "calc_weight_google_glance:", "{:.1%}".format(confidence), num, answer, "raw:", result )
-						if raw < 10 and confidence < 0.34:
-							fullsearch = True
-							# search google for the question including the answer and see if the answers are in the results
-							result2 = calc_weight_google_results(q, ans)
-							sorted_by_second = sorted( result2, key=lambda tup: tup[3], reverse=(any(word in q for word in Config.reversewords))  )
-							answer, num, raw, confidence = sorted_by_second.pop()
-							print( "Matched after full search!" )
-							print( "--- %s seconds ---" % (round(time.time() - start_time, 2)), "calc_weight_google_results:", "{:.1%}".format(confidence), num, answer, "raw:", result )
-
-						if not G.debug:
-							await G.client.send_message( channel, "I'm " + ("{:.1%}".format(confidence)) + " sure the answer is - #" + str(num+1) + " " + answer )
-
-							msg = "```Google quick search:\r\n"
-							for r in result:
-								msg += "# %s - %6s - %s\r\n" % (str(r[1]+1), "{:.1%}".format(r[3]), r[0] )
-							if fullsearch:
-								msg += "\r\nGoogle result count:\r\n"
-								for r in result2:
-									msg += "# %s - %6s - %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0])
-							msg += "```"
-							await G.client.send_message( channel, msg )
-						resultscreen = True
-						waitforblack = True
-				elif answer and num:
-					await asyncio.sleep( 1 )
-					px = ImageGrab.grab().load()
-					correct = 0
-					for i in range(3):
-						green = [0,0,0]
-						for y in range( 640+(i*115), 680+ (i*115), 1 ):
-							for x in range( 1010, 1030, 1 ):
-								color = px[x, y]
-								green[i] += color[1] - ((color[0] + color[2]) / 2)
-						if i == 0 or green[i-1] < green[i]:
-							correct = i
-
-					print("The answer is #", correct+1, ans[correct], "I guessed #", ans.index(answer)+1, ans[ans.index(answer)])
-					if not G.debug:
-						await G.client.send_message( channel, "Looks like I was %s, the correct answer was - #%s %s" % (("correct" if ans.index(answer) == correct else "WRONG"), str(correct+1), ans[correct]) )
-					resultscreen = False
-					waitforblack = True
-				else:
-					resultscreen = False
+		# determine when our next game is and wait
+		gamedata = get_text('multiline', Config.nextgame_bbox, False, True)
+		print("Game Data:", gamedata)
+		if len(gamedata) == 4 and gamedata[0] == "NEXT GAME":
+			prize = gamedata[3]
+			t = datetime.today()
+			nextgame = datetime.today().strptime( gamedata[2], '%I%p CDT' )
+			nextgame += timedelta()
+			if t.hour >= nextgame.hour:
+				nextgame += timedelta(days=1)
+				print("Game starts in the past, pausing until tomorrow")
+			print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
+			await asyncio.sleep( (nextgame-t).seconds )
 		else:
-			waitforblack = False
+			gamestarted = True
 
-		await asyncio.sleep( 0.5 )
+		if not gamestarted:
+			if not G.debug:
+				await G.client.change_presence( game=discord.Game() )
+			continue
+		else:
+			if not G.debug:
+				await G.client.send_message( channel, "Hey guys, It's HQ time!!!!" )
+				await G.client.change_presence( game=discord.Game( name='HQ Trivia' ) )
+
+		gamestart = time.time()
+		while True:
+			if (time.time() - gamestart) > 1800:
+				if not G.debug:
+					await G.client.change_presence( game=discord.Game( ) )
+				gamestarted = False
+				print("Game has run for longer than 30 minutes, stopping loop.")
+				break
+			total = (0, 0, 0)
+			px = ImageGrab.grab().load()
+			for y in range( 150, 950, 10 ):
+				for x in range( 1000, 1600, 10 ):
+					color = px[x, y]
+					total = tuple( map( sum, zip( total, color ) ) )
+			if G.debug:
+				print("color debug: ", total, " big total: ", sum(total))
+			if sum(total) > 3100000:
+				if not waitforblack:
+					if not resultscreen:
+						start_time = time.time()
+						print( "Found question!" )
+						if G.debug:
+							await asyncio.sleep(1)
+						async_question = G.pool.apply_async( get_text, ('question', Config.question_bbox, False) )
+						async_answers = G.pool.apply_async( get_text, ('answers', Config.answers_bbox, False) )
+						q = async_question.get()
+						ans = async_answers.get()
+						print( "question: ", q, " answers: ", ans )
+						# if we only get two answers here, we were at the results screen and need to abort
+						if len(ans) != 3 or not q or not q.endswith('?'):
+							print("ERROR Reading question or answers! Trying again...")
+							continue
+						else:
+							if not G.debug:
+								msg = "```ini\r\n[ " + q + " ]\r\n"
+								i = 0
+								for a in ans:
+									msg += "#" + str(i+1) + " - " + a + "\r\n"
+									i += 1
+								msg += "```"
+								await G.client.send_message( channel, msg )
+
+							# if we match at a glance, we're probably correct
+							fullsearch = False
+							# search google for the question and count the occurances of the answer
+							result = calc_weight_google_glance( q, ans )
+							sorted_by_second = sorted( result, key=lambda tup: tup[3], reverse=(any( word in q for word in Config.reversewords )) )
+							answer, num, raw, confidence = sorted_by_second.pop()
+							print("Matched at a glance!")
+							print( "--- %s seconds ---" % (round( time.time() - start_time, 2 )), "calc_weight_google_glance:", "{:.1%}".format(confidence), num, answer, "raw:", result )
+							if raw < 10 and confidence < 0.34:
+								fullsearch = True
+								# search google for the question including the answer and see if the answers are in the results
+								result2 = calc_weight_google_results(q, ans)
+								sorted_by_second = sorted( result2, key=lambda tup: tup[3], reverse=(any(word in q for word in Config.reversewords))  )
+								answer, num, raw, confidence = sorted_by_second.pop()
+								print( "Matched after full search!" )
+								print( "--- %s seconds ---" % (round(time.time() - start_time, 2)), "calc_weight_google_results:", "{:.1%}".format(confidence), num, answer, "raw:", result )
+
+							if not G.debug:
+								await G.client.send_message( channel, "I'm " + ("{:.1%}".format(confidence)) + " sure the answer is - #" + str(num+1) + " " + answer )
+
+								msg = "```Google quick search:\r\n"
+								for r in result:
+									msg += "# %s - %6s - %s\r\n" % (str(r[1]+1), "{:.1%}".format(r[3]), r[0] )
+								if fullsearch:
+									msg += "\r\nGoogle result count:\r\n"
+									for r in result2:
+										msg += "# %s - %6s - %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0])
+								msg += "```"
+								await G.client.send_message( channel, msg )
+							resultscreen = True
+							waitforblack = True
+					elif answer and num:
+						await asyncio.sleep( 1 )
+						px = ImageGrab.grab().load()
+						correct = 0
+						for i in range(3):
+							green = [0,0,0]
+							for y in range( 640+(i*115), 680+ (i*115), 1 ):
+								for x in range( 1010, 1030, 1 ):
+									color = px[x, y]
+									green[i] += color[1] - ((color[0] + color[2]) / 2)
+							if i == 0 or green[i-1] < green[i]:
+								correct = i
+
+						print("The answer is #", correct+1, ans[correct], "I guessed #", ans.index(answer)+1, ans[ans.index(answer)])
+						if not G.debug:
+							await G.client.send_message( channel, "Looks like I was %s, the correct answer was - #%s %s" % (("correct" if ans.index(answer) == correct else "WRONG"), str(correct+1), ans[correct]) )
+						resultscreen = False
+						waitforblack = True
+					else:
+						resultscreen = False
+			else:
+				waitforblack = False
+
+			await asyncio.sleep( 0.5 )
 
 
 @G.client.event
