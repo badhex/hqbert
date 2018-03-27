@@ -1,0 +1,6 @@
+pyscreenshot==0.4.2
+discord.py==0.16.12
+pytesseract==0.2.0
+Pillow==5.0.0
+discord==0.0.2
+google_api_python_client==1.6.5
