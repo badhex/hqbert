@@ -2,5 +2,5 @@
 
 ### Requirements
 ```
-pip3 install discord google-api-python-client
+pip install -r requirements.txt
 ```
