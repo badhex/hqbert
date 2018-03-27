@@ -162,8 +162,8 @@ async def my_background_task():
 				break
 			total = (0, 0, 0)
 			px = ImageGrab.grab().load()
-			for y in range( 150, 950, 10 ):
-				for x in range( 1000, 1600, 10 ):
+			for y in Config.question_detection_y_range:
+				for x in Config.question_detection_x_range:
 					color = px[x, y]
 					total = tuple( map( sum, zip( total, color ) ) )
 			if Config.debug:
