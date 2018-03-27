@@ -117,6 +117,7 @@ async def my_background_task():
 	await G.client.wait_until_ready()
 	await asyncio.sleep( 3 )
 	channel = discord.Object( id=Config.discord_channel )
+	await G.client.change_presence( game=None )
 	print( "Starting..." )
 	waitforblack=False
 	resultscreen=False
@@ -130,13 +131,14 @@ async def my_background_task():
 		gamedata = get_text('multiline', Config.nextgame_bbox, False, True)
 		print("Game Data:", gamedata)
 		if len(gamedata) == 4 and gamedata[0] == "NEXT GAME":
-			prize = gamedata[3]
 			t = datetime.today()
 			nextgame = datetime.today().strptime( gamedata[2], '%I%p CDT' )
 			nextgame += timedelta()
 			if t.hour >= nextgame.hour:
 				nextgame += timedelta(days=1)
 				print("Game starts in the past, pausing until tomorrow")
+			if not G.debug:
+				await G.client.send_message( channel, "The next game starts " + gamedata[2] + " and has a " + gamedata[3] + "! See you then!" )
 			print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
 			await asyncio.sleep( (nextgame-t).seconds )
 		else:
@@ -144,7 +146,7 @@ async def my_background_task():
 
 		if not gamestarted:
 			if not G.debug:
-				await G.client.change_presence( game=discord.Game() )
+				await G.client.change_presence( game=None )
 			continue
 		else:
 			if not G.debug:
@@ -155,7 +157,7 @@ async def my_background_task():
 		while True:
 			if (time.time() - gamestart) > 1800:
 				if not G.debug:
-					await G.client.change_presence( game=discord.Game( ) )
+					await G.client.change_presence( game=None )
 				gamestarted = False
 				print("Game has run for longer than 30 minutes, stopping loop.")
 				break
@@ -224,7 +226,7 @@ async def my_background_task():
 								await G.client.send_message( channel, msg )
 							resultscreen = True
 							waitforblack = True
-					elif answer and num:
+					elif answer and num and resultscreen and not waitforblack:
 						await asyncio.sleep( 1 )
 						px = ImageGrab.grab().load()
 						correct = 0
@@ -242,8 +244,6 @@ async def my_background_task():
 							await G.client.send_message( channel, "Looks like I was %s, the correct answer was - #%s %s" % (("correct" if ans.index(answer) == correct else "WRONG"), str(correct+1), ans[correct]) )
 						resultscreen = False
 						waitforblack = True
-					else:
-						resultscreen = False
 			else:
 				waitforblack = False
 
