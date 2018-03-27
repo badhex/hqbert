@@ -13,7 +13,6 @@ from config import Config
 class G:
 	client = discord.Client()
 	pool = ThreadPool( processes=12 )
-	debug = False
 
 def google_search(search_term, **kwargs):
 	service = build( "customsearch", "v1", developerKey=Config.gapi )
@@ -76,7 +75,7 @@ def calc_weight_google_results(question, answers):
 def get_text(kind, box, showcap=False, invert_img=False):
 	im = ImageGrab.grab( bbox=box )
 
-	if G.debug or True:
+	if Config.debug or True:
 		contrast = ImageEnhance.Contrast( im )
 		im = contrast.enhance(2)
 
@@ -137,7 +136,7 @@ async def my_background_task():
 			if t.hour >= nextgame.hour:
 				nextgame += timedelta(days=1)
 				print("Game starts in the past, pausing until tomorrow")
-			if not G.debug:
+			if not Config.debug:
 				await G.client.send_message( channel, "The next game starts " + gamedata[2] + " and has a " + gamedata[3] + "! See you then!" )
 			print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
 			await asyncio.sleep( (nextgame-t).seconds )
@@ -145,18 +144,18 @@ async def my_background_task():
 			gamestarted = True
 
 		if not gamestarted:
-			if not G.debug:
+			if not Config.debug:
 				await G.client.change_presence( game=None )
 			continue
 		else:
-			if not G.debug:
+			if not Config.debug:
 				await G.client.send_message( channel, "Hey guys, It's HQ time!!!!" )
 				await G.client.change_presence( game=discord.Game( name='HQ Trivia' ) )
 
 		gamestart = time.time()
 		while True:
 			if (time.time() - gamestart) > 1800:
-				if not G.debug:
+				if not Config.debug:
 					await G.client.change_presence( game=None )
 				gamestarted = False
 				print("Game has run for longer than 30 minutes, stopping loop.")
@@ -167,14 +166,14 @@ async def my_background_task():
 				for x in range( 1000, 1600, 10 ):
 					color = px[x, y]
 					total = tuple( map( sum, zip( total, color ) ) )
-			if G.debug:
+			if Config.debug:
 				print("color debug: ", total, " big total: ", sum(total))
 			if sum(total) > 3100000:
 				if not waitforblack:
 					if not resultscreen:
 						start_time = time.time()
 						print( "Found question!" )
-						if G.debug:
+						if Config.debug:
 							await asyncio.sleep(1)
 						async_question = G.pool.apply_async( get_text, ('question', Config.question_bbox, False) )
 						async_answers = G.pool.apply_async( get_text, ('answers', Config.answers_bbox, False) )
@@ -186,7 +185,7 @@ async def my_background_task():
 							print("ERROR Reading question or answers! Trying again...")
 							continue
 						else:
-							if not G.debug:
+							if not Config.debug:
 								msg = "```ini\r\n[ " + q + " ]\r\n"
 								i = 0
 								for a in ans:
@@ -212,7 +211,7 @@ async def my_background_task():
 								print( "Matched after full search!" )
 								print( "--- %s seconds ---" % (round(time.time() - start_time, 2)), "calc_weight_google_results:", "{:.1%}".format(confidence), num, answer, "raw:", result )
 
-							if not G.debug:
+							if not Config.debug:
 								await G.client.send_message( channel, "I'm " + ("{:.1%}".format(confidence)) + " sure the answer is - #" + str(num+1) + " " + answer )
 
 								msg = "```Google quick search:\r\n"
@@ -240,7 +239,7 @@ async def my_background_task():
 								correct = i
 
 						print("The answer is #", correct+1, ans[correct], "I guessed #", ans.index(answer)+1, ans[ans.index(answer)])
-						if not G.debug:
+						if not Config.debug:
 							await G.client.send_message( channel, "Looks like I was %s, the correct answer was - #%s %s" % (("correct" if ans.index(answer) == correct else "WRONG"), str(correct+1), ans[correct]) )
 						resultscreen = False
 						waitforblack = True
