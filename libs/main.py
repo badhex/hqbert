@@ -47,7 +47,10 @@ async def main_task():
 		print("Game Data:", gamedata)
 		if len(gamedata) == 4 and gamedata[0] == "NEXT GAME":
 			t = datetime.today()
-			nextgame = datetime.today().strptime( gamedata[2], '%I%p CDT' )
+			try:
+				nextgame = datetime.today().strptime( gamedata[2], '%I%p CDT' )
+			except:
+				nextgame = datetime.today().strptime( gamedata[2].replace("—", ""), '%m/%d %I%p CDT' )
 			nextgame += timedelta()
 			if t.hour >= nextgame.hour:
 				nextgame += timedelta(days=1)
