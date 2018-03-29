@@ -17,10 +17,13 @@ pool = ThreadPool( processes=5 )
 class Screen:
 	def __init__(self, bbox=(0,0,0,0), **kwargs):
 		self.bbox = bbox
-		self.im = ImageGrab.grab(self.bbox if self.bbox else None )
+		if self.bbox:
+			self.im = ImageGrab.grab(self.bbox)
+		else:
+			self.im = ImageGrab.grab()
 		if Config.upscale_ocr:
 			w, h = self.im.size
-			ratio = int(300 / w)
+			ratio = 300 / w
 			self.im = self.im.resize( (int(w * ratio), int(h * ratio)) )
 
 		if "enhance" in kwargs.items() and kwargs["enhance"] is True:
