@@ -10,6 +10,7 @@ else:
 	import pyscreenshot as ImageGrab
 
 from multiprocessing.pool import ThreadPool
+from config import Config
 
 pool = ThreadPool( processes=5 )
 
@@ -17,6 +18,11 @@ class Screen:
 	def __init__(self, bbox=(0,0,0,0), **kwargs):
 		self.bbox = bbox
 		self.im = ImageGrab.grab(self.bbox if self.bbox else None )
+		if Config.upscale_ocr:
+			s = self.im.size();
+			ratio = 300 / s[0];
+			self.im = self.im.resize( (s[0] * ratio, s[1] * ratio) )
+
 		if "enhance" in kwargs.items() and kwargs["enhance"] is True:
 			contrast = ImageEnhance.Contrast( self.im )
 			self.im = contrast.enhance( 2 )

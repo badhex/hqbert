@@ -4,6 +4,7 @@ class Config:
     debug_question_bbox = False
     debug_answers_bbox = False
     debug_nextgame_bbox = False
+    upscale_ocr = False
 
     gapi = '123'
     cseid = '123'
