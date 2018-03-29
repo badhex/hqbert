@@ -19,9 +19,9 @@ class Screen:
 		self.bbox = bbox
 		self.im = ImageGrab.grab(self.bbox if self.bbox else None )
 		if Config.upscale_ocr:
-			s = self.im.size
-			ratio = int(300 / s[0])
-			self.im = self.im.resize( (s[0] * ratio, s[1] * ratio) )
+			w, h = self.im.size
+			ratio = int(300 / w)
+			self.im = self.im.resize( (int(w * ratio), int(h * ratio)) )
 
 		if "enhance" in kwargs.items() and kwargs["enhance"] is True:
 			contrast = ImageEnhance.Contrast( self.im )
