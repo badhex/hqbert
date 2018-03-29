@@ -12,6 +12,7 @@ class Config:
     discord_token = '123'
 
     screen_detection_bbox = (950, 150, 1600, 1000)
+    question_threshhold = 3100000
 
     nextgame_bbox = (0,0,100,200)
     question_bbox = (0,0,100,200)

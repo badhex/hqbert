@@ -87,7 +87,7 @@ async def main_task():
 			if Config.debug:
 				print("color debug: ", total)
 
-			if total > 3100000:
+			if total > Config.question_threshhold:
 				print("After sum check")
 				
 				if not waitforblack:
