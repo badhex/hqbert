@@ -1,23 +1,16 @@
 import discord
 import asyncio
-from multiprocessing.pool import ThreadPool
 import time
 from datetime import datetime, timedelta
 
-# PIL.ImageGrab is not supported on linux
-import os
-if os.name == 'nt':
-	from PIL import ImageGrab
-else:
-	import pyscreenshot as ImageGrab
-
 from config import Config
 from libs import solver_google as solver
-from libs import ocr
+from libs.ocr import Screen
+
 
 class G:
 	client = discord.Client()
-	pool = ThreadPool( processes=12 )
+
 
 def get_color(x_range, y_range):
 	total = (0, 0, 0)
@@ -28,6 +21,7 @@ def get_color(x_range, y_range):
 			total = tuple( map( sum, zip( total, color ) ) )
 	return total
 
+
 async def main_task():
 	await G.client.wait_until_ready()
 	await asyncio.sleep( 3 )
@@ -37,35 +31,43 @@ async def main_task():
 	waitforblack=False
 	resultscreen=False
 	gamestarted=False
-	answer = ""
 	ans = []
-	num = 0
 
 	while True:
-		# determine when our next game is and wait
-		gamedata = ocr.get_text('multiline', Config.nextgame_bbox, False, True)
-		print("Game Data:", gamedata)
-		if len(gamedata) == 4 and gamedata[0] == "NEXT GAME":
-			t = datetime.today()
-			try:
-				nextgame = datetime.today().strptime( gamedata[2], '%I%p CDT' )
-			except:
-				nextgame = datetime.today().strptime( gamedata[2].replace("—", ""), '%m/%d %I%p CDT' )
-			nextgame += timedelta()
-			if t.hour >= nextgame.hour:
-				print("Game starts in the past, waiting for it to start...")
-				await asyncio.sleep( 10 )
+		###########################################################
+		# Pre-Game Check and pause
+		###########################################################
+		sc = Screen(Config.nextgame_bbox, show=Config.debug_nextgame_bbox)
+		color = sc.average_color()
+		if color[0] < color[2] and color[1] < color[2]:
+			gamedata = sc.text(True)
+			print("Game Data:", gamedata)
+			if len(gamedata) == 3 and gamedata[0] == "NEXT GAME":
+				t = datetime.today()
+				try:
+					nextgame = datetime.today().strptime( gamedata[1], '%I%p CDT' )
+				except:
+					nextgame = datetime.today().strptime( gamedata[1].replace("—", ""), '%m/%d %I%p CDT' )
+				nextgame += timedelta()
+				if t.hour >= nextgame.hour:
+					print("Game starts in the past, waiting for it to start...")
+					await asyncio.sleep( 10 )
+				else:
+					if not Config.debug:
+						await G.client.send_message( channel, "The next game starts " + gamedata[1] + " and has a " + gamedata[2] + "! See you then!" )
+					print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
+					await asyncio.sleep( (nextgame-t).seconds )
 			else:
-				if not Config.debug:
-					await G.client.send_message( channel, "The next game starts " + gamedata[2] + " and has a " + gamedata[3] + "! See you then!" )
-				print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
-				await asyncio.sleep( (nextgame-t).seconds )
+				gamestarted = True
 		else:
 			gamestarted = True
 
 		if not gamestarted:
 			continue
 
+		###########################################################
+		# Game starting
+		###########################################################
 		if not Config.debug:
 			await G.client.send_message( channel, "Hey guys, It's HQ time!!!!" )
 			await G.client.change_presence( game=discord.Game( name='HQ Trivia' ) )
@@ -73,19 +75,19 @@ async def main_task():
 		gamestart = time.time()
 		solution = None
 		while True:
-			print("While loop")
+			print("Main loop")
 			if (time.time() - gamestart) > 1800:
 				if not Config.debug:
 					await G.client.change_presence( game=None )
 				gamestarted = False
 				print("Game has run for longer than 30 minutes, stopping loop.")
-				if Config.debug:
-					await G.client.change_presence( game=None )
 				break
-			total = get_color(Config.question_detection_x_range, Config.question_detection_y_range)
+
+			total = sum(Screen(Config.screen_detection_bbox).color_sum(10))
 			if Config.debug:
-				print("color debug: ", total, " big total: ", sum(total))
-			if sum(total) > 3100000:
+				print("color debug: ", total)
+
+			if total > 3100000:
 				print("After sum check")
 				
 				if not waitforblack:
@@ -94,10 +96,7 @@ async def main_task():
 						print( "Found question!" )
 						if Config.debug:
 							await asyncio.sleep(1)
-						async_question = G.pool.apply_async( ocr.get_text, ('question', Config.question_bbox, False) )
-						async_answers = G.pool.apply_async( ocr.get_text, ('answers', Config.answers_bbox, False) )
-						q = async_question.get()
-						ans = async_answers.get()
+						q, ans = (Screen(Config.question_bbox, show=Config.debug_question_bbox).text(), Screen(Config.answers_bbox, show=Config.debug_answers_bbox).text(True))
 						print( "question: ", q, " answers: ", ans )
 						# if we only get two answers here, we were at the results screen and need to abort
 						if len(ans) != 3 or not q or not q.endswith('?'):
@@ -124,16 +123,10 @@ async def main_task():
 					elif solution and resultscreen and not waitforblack:
 						print("In next case")
 						await asyncio.sleep( 1 )
-						px = ImageGrab.grab().load()
-						correct = 0
-						for i in range(3):
-							green = [0,0,0]
-							for y in range( 640+(i*115), 680+ (i*115), 1 ):
-								for x in range( 1010, 1030, 1 ):
-									color = px[x, y]
-									green[i] += color[1] - ((color[0] + color[2]) / 2)
-							if i == 0 or green[i-1] < green[i]:
-								correct = i
+						correct = Screen(Config.answers_bbox).selected()
+						if correct == -1:
+							print("Could not determine answer... bail bail")
+							continue
 
 						answer = solution['answer']
 						print("The answer is #", correct+1, ans[correct], "I guessed #", ans.index(answer)+1, ans[ans.index(answer)])

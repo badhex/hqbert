@@ -1,13 +1,17 @@
+
 class Config:
     debug = True
+    debug_question_bbox = False
+    debug_answers_bbox = False
+    debug_nextgame_bbox = False
+
     gapi = '123'
     cseid = '123'
 
     discord_channel = '123'
     discord_token = '123'
 
-    question_detection_y_range = range( 150, 950, 10 )
-    question_detection_x_range = range( 1000, 1600, 10 )
+    screen_detection_bbox = (950, 150, 1600, 1000)
 
     nextgame_bbox = (0,0,100,200)
     question_bbox = (0,0,100,200)
