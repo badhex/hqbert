@@ -53,23 +53,22 @@ async def main_task():
 				nextgame = datetime.today().strptime( gamedata[2].replace("—", ""), '%m/%d %I%p CDT' )
 			nextgame += timedelta()
 			if t.hour >= nextgame.hour:
-				nextgame += timedelta(days=1)
-				print("Game starts in the past, pausing until tomorrow")
-			if not Config.debug:
-				await G.client.send_message( channel, "The next game starts " + gamedata[2] + " and has a " + gamedata[3] + "! See you then!" )
-			print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
-			await asyncio.sleep( (nextgame-t).seconds )
+				print("Game starts in the past, waiting for it to start...")
+				await asyncio.sleep( 10 )
+			else:
+				if not Config.debug:
+					await G.client.send_message( channel, "The next game starts " + gamedata[2] + " and has a " + gamedata[3] + "! See you then!" )
+				print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
+				await asyncio.sleep( (nextgame-t).seconds )
 		else:
 			gamestarted = True
 
 		if not gamestarted:
-			if not Config.debug:
-				await G.client.change_presence( game=None )
 			continue
-		else:
-			if not Config.debug:
-				await G.client.send_message( channel, "Hey guys, It's HQ time!!!!" )
-				await G.client.change_presence( game=discord.Game( name='HQ Trivia' ) )
+
+		if not Config.debug:
+			await G.client.send_message( channel, "Hey guys, It's HQ time!!!!" )
+			await G.client.change_presence( game=discord.Game( name='HQ Trivia' ) )
 
 		gamestart = time.time()
 		solution = None
@@ -80,6 +79,8 @@ async def main_task():
 					await G.client.change_presence( game=None )
 				gamestarted = False
 				print("Game has run for longer than 30 minutes, stopping loop.")
+				if Config.debug:
+					await G.client.change_presence( game=None )
 				break
 			total = get_color(Config.question_detection_x_range, Config.question_detection_y_range)
 			if Config.debug:
