@@ -37,7 +37,7 @@ async def main_task():
 		###########################################################
 		# Pre-Game Check and pause
 		###########################################################
-		sc = Screen(Config.nextgame_bbox, show=Config.debug_nextgame_bbox)
+		sc = Screen(Config.nextgame_bbox, invert=True, grayscale=True, show=Config.debug_nextgame_bbox)
 		color = sc.average_color()
 		if color[0] < color[2] and color[1] < color[2]:
 			gamedata = sc.text(True)
