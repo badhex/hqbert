@@ -72,8 +72,12 @@ class Screen:
 		for y in y_range:
 			for x in x_range:
 				color = px[x, y]
-				if color:
+				try:
 					total = tuple( map( sum, zip( total, color ) ) )
+				except:
+					if Config.debug:
+						print("error:", "color_sum:", "color:", color)
+					pass
 		return total
 
 	def __text__(self, multiline=False):
