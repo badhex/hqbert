@@ -40,23 +40,26 @@ async def main_task():
 		sc = Screen(Config.nextgame_bbox, invert=True, grayscale=True, show=Config.debug_nextgame_bbox)
 		color = sc.average_color()
 		if color[0] < color[2] and color[1] < color[2]:
-			gamedata = sc.text(True)
-			print("Game Data:", gamedata)
-			if len(gamedata) == 3 and gamedata[0] == "NEXT GAME":
-				t = datetime.today()
-				try:
-					nextgame = datetime.today().strptime( gamedata[1], '%I%p CDT' )
-				except:
-					nextgame = datetime.today().strptime( gamedata[1].replace("—", ""), '%m/%d %I%p CDT' )
-				nextgame += timedelta()
-				if t.hour >= nextgame.hour:
-					print("Game starts in the past, waiting for it to start...")
-					await asyncio.sleep( 10 )
-				else:
-					if not Config.debug:
-						await G.client.send_message( channel, "The next game starts " + gamedata[1] + " and has a " + gamedata[2] + "! See you then!" )
-					print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
-					await asyncio.sleep( (nextgame-t).seconds )
+			try:
+				gamedata = sc.text(True)
+				print("Game Data:", gamedata)
+				if len(gamedata) == 3 and gamedata[0] == "NEXT GAME":
+					t = datetime.today()
+					try:
+						nextgame = datetime.today().strptime( gamedata[1], '%I%p CDT' )
+					except:
+						nextgame = datetime.today().strptime( gamedata[1].replace("—", ""), '%m/%d %I%p CDT' )
+					nextgame += timedelta()
+					if t.hour >= nextgame.hour:
+						print("Game starts in the past, waiting for it to start...")
+						await asyncio.sleep( 10 )
+					else:
+						if not Config.debug:
+							await G.client.send_message( channel, "The next game starts " + gamedata[1] + " and has a " + gamedata[2] + "! See you then!" )
+						print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
+						await asyncio.sleep( (nextgame-t).seconds )
+			except:
+				gamestarted = True
 			else:
 				gamestarted = True
 		else:
