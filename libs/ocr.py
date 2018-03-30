@@ -72,7 +72,8 @@ class Screen:
 		for y in y_range:
 			for x in x_range:
 				color = px[x, y]
-				total = tuple( map( sum, zip( total, (color if len(color) == 3 else (0,0,0)) ) ) )
+				if color:
+					total = tuple( map( sum, zip( total, color ) ) )
 		return total
 
 	def __text__(self, multiline=False):
@@ -81,18 +82,22 @@ class Screen:
 		else:
 			txt = pytesseract.image_to_string( self.im, lang='eng', config='-psm 3' ).splitlines()
 			if not txt:
-				# check for single character lines
-				w, h = self.im.size
-				count = 0
-				for i in range( 0, int( h ), int( h / 3 ) ):
-					if count >= 3:
-						break
-					box = (0, i, int(w / 2), i + int( h / 3 ))
-					a = self.im.crop( box )
-					ans = pytesseract.image_to_string( a, lang='eng', config='-psm 10' ).splitlines()
-					if ans:
-						txt.append( ans[0] )
-						count += 1
+				# Try making the image B&W
+				retry = self.im.convert( 'L' )
+				txt = pytesseract.image_to_string( retry, lang='eng', config='-psm 3' ).splitlines()
+				if not txt:
+					# check for single character lines
+					w, h = self.im.size
+					count = 0
+					for i in range( 0, int( h ), int( h / 3 ) ):
+						if count >= 3:
+							break
+						box = (0, i, int(w / 2), i + int( h / 3 ))
+						a = self.im.crop( box )
+						ans = pytesseract.image_to_string( a, lang='eng', config='-psm 10' ).splitlines()
+						if ans:
+							txt.append( ans[0] )
+							count += 1
 			return list( filter( None, txt ) )
 
 	def text(self, multiline=False):
