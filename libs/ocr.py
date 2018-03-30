@@ -87,7 +87,7 @@ class Screen:
 				for i in range( 0, int( h ), int( h / 3 ) ):
 					if count >= 3:
 						break
-					box = (0, i, w / 2, i + int( h / 3 ))
+					box = (0, i, int(w / 2), i + int( h / 3 ))
 					a = self.im.crop( box )
 					ans = pytesseract.image_to_string( a, lang='eng', config='-psm 10' ).splitlines()
 					if ans:
