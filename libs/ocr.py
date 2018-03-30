@@ -23,7 +23,7 @@ class Screen:
 			self.im = ImageGrab.grab()
 		if Config.upscale_ocr:
 			w, h = self.im.size
-			ratio = 300 / w
+			ratio = Config.upscale_ocr / w
 			self.im = self.im.resize( (int(w * ratio), int(h * ratio)) )
 
 		if "enhance" in kwargs.items() and kwargs["enhance"] is True:
