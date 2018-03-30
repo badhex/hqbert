@@ -72,7 +72,7 @@ class Screen:
 		for y in y_range:
 			for x in x_range:
 				color = px[x, y]
-				total = tuple( map( sum, zip( total, color ) ) )
+				total = tuple( map( sum, zip( total, (color if len(color) == 3 else (0,0,0)) ) ) )
 		return total
 
 	def __text__(self, multiline=False):
