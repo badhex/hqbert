@@ -112,6 +112,8 @@ class Screen:
 				for x in range( 0, w, 1 ):
 					color = sc[x, y]
 					green[i] += color[1] - ((color[0] + color[2]) / 2)
+			if Config.debug:
+				print("Question", i, "color:", green, "avg color:", self.average_color())
 			if i == 0 or green[i - 1] < green[i]:
 				correct = i
 
