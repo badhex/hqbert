@@ -78,7 +78,8 @@ async def main_task():
 		gamestart = time.time()
 		solution = None
 		while True:
-			print("Main loop")
+			if Config.debug:
+				print("Main loop")
 			if (time.time() - gamestart) > 1800:
 				if not Config.debug:
 					await G.client.change_presence( game=None )
@@ -91,10 +92,12 @@ async def main_task():
 				print("color debug: ", total)
 
 			if total > Config.question_threshhold:
-				print("After sum check")
+				if Config.debug:
+					print("After sum check")
 				
 				if not waitforblack:
-					print("After not waitforblack")
+					if Config.debug:
+						print("After not waitforblack")
 					if not resultscreen:
 						print( "Found question!" )
 						if Config.debug:
@@ -122,9 +125,11 @@ async def main_task():
 								await G.client.send_message( channel, solution['msg'] )
 							resultscreen = True
 							waitforblack = True
-							print("Exiting first case")
+							if Config.debug:
+								print("Exiting first case")
 					elif solution and resultscreen and not waitforblack:
-						print("In next case")
+						if Config.debug:
+							print("In next case")
 						await asyncio.sleep( 1 )
 						correct = Screen(Config.answers_bbox).selected()
 						if correct == -1:

@@ -108,12 +108,12 @@ class Screen:
 		correct = -1
 		for i in range(rows):
 			green = [0, 0, 0]
-			for y in range( 0 + (i * rh), (i+1 * rh), 1 ):
+			for y in range( 0 + (i * rh), ((i+1) * rh), 1 ):
 				for x in range( 0, w, 1 ):
 					color = sc[x, y]
 					green[i] += color[1] - ((color[0] + color[2]) / 2)
 			if Config.debug:
-				print("Question", i, "color:", green, "avg color:", self.average_color())
+				print("Question", i, "color:", green[i])
 			if i == 0 or green[i - 1] < green[i]:
 				correct = i
 
