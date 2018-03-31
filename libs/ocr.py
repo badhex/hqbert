@@ -21,7 +21,8 @@ class Screen:
 			self.im = ImageGrab.grab(self.bbox)
 		else:
 			self.im = ImageGrab.grab()
-		if Config.upscale_ocr:
+
+		if "upscale" in kwargs.items() and kwargs["upscale"] is True:
 			w, h = self.im.size
 			ratio = Config.upscale_ocr / w
 			self.im = self.im.resize( (int(w * ratio), int(h * ratio)) )
