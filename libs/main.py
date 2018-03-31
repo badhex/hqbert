@@ -51,13 +51,13 @@ async def main_task():
 						nextgame = datetime.today().strptime( gamedata[1].replace("—", ""), '%m/%d %I%p CDT' )
 					nextgame += timedelta()
 					if t.hour >= nextgame.hour:
-						print("Game starts in the past, waiting for it to start...")
-						await asyncio.sleep( 10 )
-					else:
-						if not Config.debug:
-							await G.client.send_message( channel, "The next game starts " + gamedata[1] + " and has a " + gamedata[2] + "! See you then!" )
-						print( "Sleeping for:", (nextgame-t).seconds, "seconds" )
-						await asyncio.sleep( (nextgame-t).seconds )
+						print("Game starts in the past, advancing a day...")
+						nextgame += timedelta(days=1)
+
+					if not Config.debug:
+						await G.client.send_message( channel, "The next game starts " + gamedata[1] + " and has a " + gamedata[2] + "! See you then!" )
+					print( "Sleeping for:", ((nextgame-t).seconds + 120), "seconds" )
+					await asyncio.sleep( ((nextgame-t).seconds + 120) )
 			except:
 				gamestarted = True
 			else:
