@@ -104,10 +104,15 @@ async def main_task():
 							await asyncio.sleep(1)
 						q, ans = (Screen(Config.question_bbox, show=Config.debug_question_bbox).text(), Screen(Config.answers_bbox, show=Config.debug_answers_bbox).text(True))
 						print( "question: ", q, " answers: ", ans )
-						# if we only get two answers here, we were at the results screen and need to abort
+						# if we don't get three answers here, we  need to abort
 						if len(ans) != 3 or not q or not q.endswith('?'):
-							print("ERROR Reading question or answers! Trying again...")
-							continue
+							print("ERROR Reading question or answers!")
+							if "BALANCE WEEKLV RANK" in ans or "BALANCE WEEKLY RANK" in ans:
+								gamestarted = False
+								print("At the next game screen.")
+								break
+							else:
+								continue
 						else:
 							if not Config.debug:
 								msg = "```ini\r\n[ " + q + " ]\r\n"
