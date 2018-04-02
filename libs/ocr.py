@@ -121,8 +121,8 @@ class Screen:
 		rh = int(floor(float(h)/float(rows)))
 		sc = self.im.load()
 		correct = -1
+		green = [0, 0, 0]
 		for i in range(rows):
-			green = [0, 0, 0]
 			for y in range( 0 + (i * rh), ((i+1) * rh), 1 ):
 				for x in range( 0, w, 1 ):
 					color = sc[x, y]
