@@ -136,3 +136,7 @@ class Screen:
 
 	def show(self):
 		self.im.show()
+
+	def write(self, file="test.png"):
+		self.im.load()
+		self.im.save(file)
