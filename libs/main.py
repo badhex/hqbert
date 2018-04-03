@@ -128,14 +128,15 @@ async def main_task():
 						if Config.debug:
 							print("In next case")
 						await asyncio.sleep( 1 )
-						correct = Screen(Config.answers_bbox).selected()
+						sca = Screen(Config.answers_bbox)
+						correct = sca.selected()
 						if correct == -1:
 							print("Could not determine answer... bail bail")
 							continue
 
 						answer = solution['answer']
 						try:
-							writeq(q, ans, correct+1, ans.index(answer)+1)
+							writeq(q, ans, correct+1, ans.index(answer)+1, sc.im.load(), sca.im.load())
 							print("QandA written to database.")
 						except:
 							print("Failed to write to database.")
