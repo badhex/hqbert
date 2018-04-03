@@ -20,3 +20,12 @@ class Config:
     answers_bbox = (0,0,100,200)
 
     reversewords = ['not']
+
+    class DBcfg:
+        host = 'localhost'
+        user = 'hqbert'
+        password = 'pass'
+        db = 'hqbert'
+        table = 'qa'
+        charset = 'utf8mb4'
+

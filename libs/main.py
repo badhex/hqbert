@@ -7,19 +7,11 @@ from config import Config
 from libs import solver_google as solver
 from libs.ocr import Screen
 
+from libs.db import writeq
+
 
 class G:
 	client = discord.Client()
-
-
-def get_color(x_range, y_range):
-	total = (0, 0, 0)
-	px = ImageGrab.grab().load()
-	for y in y_range:
-		for x in x_range:
-			color = px[x, y]
-			total = tuple( map( sum, zip( total, color ) ) )
-	return total
 
 
 async def main_task():
@@ -142,6 +134,11 @@ async def main_task():
 							continue
 
 						answer = solution['answer']
+						try:
+							writeq(q, ans, correct+1, ans.index(answer)+1)
+							print("QandA written to database.")
+						except:
+							print("Failed to write to database.")
 						print("The answer is #", correct+1, ans[correct], "I guessed #", ans.index(answer)+1, ans[ans.index(answer)])
 						if not Config.debug:
 							await G.client.send_message( channel, "Looks like I was %s, the correct answer was - #%s %s" % (("correct" if ans.index(answer) == correct else "WRONG"), str(correct+1), ans[correct]) )
