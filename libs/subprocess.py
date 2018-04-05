@@ -68,7 +68,6 @@ def make_chunks(l, n):
 # If max_concurrent_tasks are set to 0, no limit is applied.
 # By default, Windows uses SelectorEventLoop, which does not support subprocesses. Therefore ProactorEventLoop is used on Windows.
 def run_asyncio_commands(tasks, max_concurrent_tasks=0):
-
 	all_results = []
 
 	if max_concurrent_tasks == 0:

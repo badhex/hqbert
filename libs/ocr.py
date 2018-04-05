@@ -4,6 +4,7 @@ from math import floor
 
 # PIL.ImageGrab is not supported on linux
 import os
+
 if os.name == 'nt':
 	from PIL import ImageGrab
 else:
@@ -14,18 +15,19 @@ from config import Config
 
 pool = ThreadPool( processes=5 )
 
+
 class Screen:
-	def __init__(self, bbox=(0,0,0,0), **kwargs):
+	def __init__(self, bbox=(0, 0, 0, 0), **kwargs):
 		self.bbox = bbox
 		if self.bbox:
-			self.im = ImageGrab.grab(self.bbox)
+			self.im = ImageGrab.grab( self.bbox )
 		else:
 			self.im = ImageGrab.grab()
 
 		if "upscale" in kwargs.items() and kwargs["upscale"] is True:
 			w, h = self.im.size
 			ratio = Config.upscale_ocr / w
-			self.im = self.im.resize( (int(w * ratio), int(h * ratio)) )
+			self.im = self.im.resize( (int( w * ratio ), int( h * ratio )) )
 
 		if "enhance" in kwargs.items() and kwargs["enhance"] is True:
 			contrast = ImageEnhance.Contrast( self.im )
@@ -66,8 +68,8 @@ class Screen:
 	# returns the sum of all color values
 	def color_sum(self, step=1):
 		w, h = self.im.size
-		x_range = range(0,w,step)
-		y_range = range(0,h,step)
+		x_range = range( 0, w, step )
+		y_range = range( 0, h, step )
 		total = (0, 0, 0)
 		px = self.im.load()
 		for y in y_range:
@@ -77,7 +79,7 @@ class Screen:
 					total = tuple( map( sum, zip( total, color ) ) )
 				except:
 					if Config.debug:
-						print("error:", "color_sum:", "color:", color)
+						print( "error:", "color_sum:", "color:", color )
 					pass
 		return total
 
@@ -102,7 +104,7 @@ class Screen:
 				for i in range( 0, int( h ), int( h / 3 ) ):
 					if count >= 3:
 						break
-					box = (0, i, int(w / 2), i + int( h / 3 ))
+					box = (0, i, int( w / 2 ), i + int( h / 3 ))
 					a = self.im.crop( box )
 					ans = pytesseract.image_to_string( a, lang='eng', config='-psm 10' ).splitlines()
 					if ans:
@@ -111,24 +113,24 @@ class Screen:
 			return list( filter( None, txt ) )
 
 	def text(self, multiline=False):
-		async = pool.apply_async( self.__text__, (multiline, ) )
+		async = pool.apply_async( self.__text__, (multiline,) )
 		return async.get()
 
 	# returns the index highlighted
 	# TODO: allow check for different colors
 	def selected(self, rows=3):
 		w, h = self.im.size
-		rh = int(floor(float(h)/float(rows)))
+		rh = int( floor( float( h ) / float( rows ) ) )
 		sc = self.im.load()
 		correct = -1
 		green = [0, 0, 0]
-		for i in range(rows):
-			for y in range( 0 + (i * rh), ((i+1) * rh), 1 ):
+		for i in range( rows ):
+			for y in range( 0 + (i * rh), ((i + 1) * rh), 1 ):
 				for x in range( 0, w, 1 ):
 					color = sc[x, y]
 					green[i] += color[1] - ((color[0] + color[2]) / 2)
 			if Config.debug:
-				print("Question", i, "color:", green[i])
+				print( "Question", i, "color:", green[i] )
 			if i == 0 or green[i - 1] < green[i]:
 				correct = i
 
@@ -139,4 +141,4 @@ class Screen:
 
 	def write(self, file="test.png"):
 		self.im.load()
-		self.im.save(file)
+		self.im.save( file )
