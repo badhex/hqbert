@@ -21,7 +21,7 @@ class Config:
 
     reversewords = ['not']
 
-    class DBcfg:
+    class DB:
         host = 'localhost'
         user = 'hqbert'
         password = 'pass'

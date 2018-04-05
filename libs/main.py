@@ -2,6 +2,7 @@ import discord
 import asyncio
 import time
 import traceback
+import dateparser
 from datetime import datetime, timedelta
 
 from config import Config
@@ -38,22 +39,22 @@ async def main_task():
 				print("Game Data:", gamedata)
 				if len(gamedata) == 3 and gamedata[0] == "NEXT GAME":
 					t = datetime.today()
-					try:
-						nextgame = datetime.today().strptime( gamedata[1], '%I%p CDT' )
-					except:
-						nextgame = datetime.today().strptime( gamedata[1].replace("—", ""), '%m/%d %I%p CDT' )
-					nextgame += timedelta()
-					if t.hour >= nextgame.hour:
-						print("Game starts in the past, advancing a day...")
-						nextgame += timedelta(days=1)
+					nextgame = dateparser.parse(gamedata[1].replace("—", ""), languages=['en'], date_formats=['%I%p CDT', '%m/%d %I%p CDT'])
+					if not nextgame:
+						gamestarted = True
+						if Config.debug:
+							print("No Date Time found.")
+					else:
+						nextgame += timedelta()
+						if t.hour >= nextgame.hour:
+							print("Game starts in the past, advancing a day...")
+							nextgame += timedelta(days=1)
 
-					if not Config.debug:
-						await G.client.send_message( channel, "The next game starts " + gamedata[1] + " and has a " + gamedata[2] + "! See you then!" )
-					print( "Sleeping for:", ((nextgame-t).seconds + 120), "seconds" )
-					await asyncio.sleep( ((nextgame-t).seconds + 120) )
+						if not Config.debug:
+							await G.client.send_message( channel, "The next game starts " + gamedata[1] + " and has a " + gamedata[2] + "! See you then!" )
+						print( "Sleeping for:", ((nextgame-t).seconds + 120), "seconds" )
+						await asyncio.sleep( ((nextgame-t).seconds + 120) )
 			except:
-				gamestarted = True
-			else:
 				gamestarted = True
 		else:
 			gamestarted = True

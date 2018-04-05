@@ -5,7 +5,7 @@ from config import Config
 
 
 def writeq(q, ans, correct, answered, qimage=None, aimage=None):
-	connection = pymysql.connect( host=Config.DBcfg.host, user=Config.DBcfg.user, password=Config.DBcfg.password, db=Config.DBcfg.db, charset=Config.DBcfg.charset,
+	connection = pymysql.connect( host=Config.DB.host, user=Config.DB.user, password=Config.DB.password, db=Config.DB.db, charset=Config.DB.charset,
 	                              cursorclass=pymysql.cursors.DictCursor )
 	try:
 		with connection.cursor() as cursor:

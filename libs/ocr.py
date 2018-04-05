@@ -91,10 +91,10 @@ class Screen:
 				contrast = ImageEnhance.Contrast( self.im )
 				retry = contrast.enhance( 2 )
 				txt = pytesseract.image_to_string( retry, lang='eng', config='-psm 3' ).splitlines()
-			if not txt:
-				# Try making the image B&W
-				retry = self.im.convert( 'L' )
-				txt = pytesseract.image_to_string( retry, lang='eng', config='-psm 3' ).splitlines()
+				if not txt:
+					# Try making the image B&W
+					retry = retry.convert( 'L' )
+					txt = pytesseract.image_to_string( retry, lang='eng', config='-psm 3' ).splitlines()
 			if not txt:
 				# check for single character lines
 				w, h = self.im.size
