@@ -10,7 +10,7 @@ def writeq(q, ans, correct, answered, qimage=None, aimage=None):
 		with connection.cursor() as cursor:
 			# Create a new record
 			sql = "INSERT INTO `" + Config.DBcfg.table + "` (`q`, `a1`, `a2`, `a3`, `correct`, `answered`, `qimage`, `aimage`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-			cursor.execute( sql, (q, ans[0], ans[1], ans[2], int(correct), int(answered)), base64.b64encode(qimage.convert("RGBA").tostring("raw", "RGBA")), base64.b64encode(aimage.convert("RGBA").tostring("raw", "RGBA")) )
+			cursor.execute( sql, ( q, ans[0], ans[1], ans[2], int(correct), int(answered), base64.b64encode(qimage.tobytes()), base64.b64encode(aimage.tobytes()) ) )
 
 		# connection is not autocommit by default. So you must commit to save your changes.
 		connection.commit()

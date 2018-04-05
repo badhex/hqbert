@@ -139,7 +139,7 @@ async def main_task():
 
 						answer = solution['answer']
 						try:
-							writeq(q, ans, correct+1, ans.index(answer)+1, qimg.im.load(), aimg.im.load())
+							writeq(q, ans, correct+1, ans.index(answer)+1, qimg.im, aimg.im)
 							print("QandA written to database.")
 						except Exception as e:
 							print( "Failed to write to database." )
