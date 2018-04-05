@@ -1,6 +1,7 @@
 import discord
 import asyncio
 import time
+import traceback
 from datetime import datetime, timedelta
 
 from config import Config
@@ -94,7 +95,9 @@ async def main_task():
 						print( "Found question!" )
 						if Config.debug:
 							await asyncio.sleep(1)
-						q, ans = (Screen(Config.question_bbox, show=Config.debug_question_bbox).text(), Screen(Config.answers_bbox, show=Config.debug_answers_bbox).text(True))
+						qimg = Screen(Config.question_bbox, show=Config.debug_question_bbox)
+						aimg = Screen(Config.answers_bbox, show=Config.debug_answers_bbox)
+						q, ans = (qimg.text(), aimg.text(True))
 						print( "question: ", q, " answers: ", ans )
 						# if we don't get three answers here, we  need to abort
 						if len(ans) != 3 or not q or not q.endswith('?'):
@@ -136,10 +139,12 @@ async def main_task():
 
 						answer = solution['answer']
 						try:
-							writeq(q, ans, correct+1, ans.index(answer)+1, sc.im.load(), sca.im.load())
+							writeq(q, ans, correct+1, ans.index(answer)+1, qimg.im.load(), aimg.im.load())
 							print("QandA written to database.")
-						except:
-							print("Failed to write to database.")
+						except Exception as e:
+							print( "Failed to write to database." )
+							print(traceback.format_exc())
+							print(e)
 						print("The answer is #", correct+1, ans[correct], "I guessed #", ans.index(answer)+1, ans[ans.index(answer)])
 						if not Config.debug:
 							await G.client.send_message( channel, "Looks like I was %s, the correct answer was - #%s %s" % (("correct" if ans.index(answer) == correct else "WRONG"), str(correct+1), ans[correct]) )
