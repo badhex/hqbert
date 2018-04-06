@@ -129,7 +129,7 @@ async def main_task():
 							waitforblack = True
 							if Config.debug:
 								print( "Exiting first case" )
-					elif solution and resultscreen and not waitforblack:
+					elif solution and resultscreen and not waitforblack and q and qimg and aimg and ans:
 						if Config.debug:
 							print( "In next case" )
 						await asyncio.sleep( 1 )
