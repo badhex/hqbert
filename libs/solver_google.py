@@ -23,20 +23,21 @@ def solve(question, answers):
 
 	votes = []
 	msg = "```"
-	for k, r in results.items():
-		result[k] = r.get()
+	for k, set in results.items():
+		result[k] = set.get()
 
 		msg += ("\r\n" if k > 1 else "") + rtypes[k] + ":"
-		for i, set in result[k]:
-			# get the index of the highest percent
-			correct = sorted( set, key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )[-1][1]
-			votes.append(correct[1])
-			for re in set:
-				msg += "# %s - %6s - %s %s\r\n" % (str( re[1] + 1 ), "{:.1%}".format( re[3] ), re[0], ("✓" if correct[1] == re[1] else ""))
+		for r in result[k]:
+			msg += "# %s - %6s - %s %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0], ("✓" if correct[1] == r[1] else ""))
+
+		# get the index of the highest percent
+		correct = sorted( r, key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )[-1][1]
+		votes.append(correct[1])
+
 	msg += "```"
 
 	# return most frequently voted for
-	answer, num, raw, confidence = result[max( votes, key=votes.count )]
+	answer, num, raw, confidence = result[1][max( votes, key=votes.count )]
 
 	return {'answer': answer, 'num': num, 'confidence': confidence, 'msg': msg, 'votes': votes.count(num)}
 
