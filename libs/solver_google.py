@@ -27,9 +27,10 @@ def solve(question, answers):
 		result[k] = v.get()
 		msg += ("\r\n" if k > 1 else "") + rtypes[k] + ":\r\n"
 		correct = sorted( result[k], key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )[-1]
-		votes.append( correct[1] )
+		if correct[3] > 0.0 or any( word in question for word in Config.reversewords ):
+			votes.append( correct[1] )
 		for r in result[k]:
-			msg += "# %s - %6s - %s %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0], ("✓" if correct[1] == r[1] else ""))
+			msg += "# %s - %6s - %s %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0], ("✓" if correct[1] == r[1] and (correct[3] > 0.0 or any( word in question for word in Config.reversewords )) else ""))
 	msg += "```"
 
 	# return most frequently voted for
