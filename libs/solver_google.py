@@ -28,11 +28,10 @@ def solve(question, answers):
 
 		msg += ("\r\n" if k > 1 else "") + rtypes[k] + ":"
 		for r in result[k]:
+			# get the index of the highest percent
+			correct = sorted( r, key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )[-1][1]
+			votes.append( correct[1] )
 			msg += "# %s - %6s - %s %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0], ("✓" if correct[1] == r[1] else ""))
-
-		# get the index of the highest percent
-		correct = sorted( r, key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )[-1][1]
-		votes.append(correct[1])
 
 	msg += "```"
 
