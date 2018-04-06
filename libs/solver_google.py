@@ -9,8 +9,8 @@ spool = ThreadPool( processes=5 )
 def solve(question, answers):
 	start_time = time.time()
 	async_result = spool.apply_async( calc_weight_google_glance, ( question, answers ) )
-	async_result2 = spool.apply_async( calc_weight_google_results, (question, answers) )
-	async_result3 = spool.apply_async( calc_weight_google_results, (question, answers) )
+	async_result2 = spool.apply_async( calc_weight_google_results, ( question, answers ) )
+	async_result3 = spool.apply_async( calc_weight_google_results, ("%s%s" % (question, " ".join(answers)), answers) )
 
 	# search google for the question and count the occurances of the answer
 	result = async_result.get()
@@ -88,30 +88,6 @@ def calc_weight_google_results(question, answers):
 		                         exactTerms=a.replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ) )
 		result[a_num] = (a, a_num, int( results['searchInformation']['totalResults'] ))
 		total_i += int( results['searchInformation']['totalResults'] )
-		a_num += 1
-	# now that we have all the answers, figure out the percentages
-	a_num = 0
-	for r in result:
-		a, n, a_i = r
-		percent = (float( a_i ) / float( total_i )) if total_i > 0 else 0.0
-		result[a_num] = (a, n, a_i, percent)
-		a_num += 1
-
-	return result
-
-# determine the weight of answer by search results title and snippits including answers in full search
-# takes:  question as string, answers as list of strings
-# returns: list [(answer, number, raw, confidence), (answer, number, raw, confidence), (answer, number, raw, confidence)]
-def calc_weight_google_glance_grouped(question, answers):
-	question = question.replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" )
-	result = [(), (), ()]
-	total_i = 0
-	a_num = 0
-	results = google_search( "%s %s" % (question.replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ), " ".join(answers).replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" )) )
-	for a in answers:
-		for i in results['items']:
-			result[a_num] += i["title"].count(a) + i["snippet"].count(a)
-		total_i += result[a_num]
 		a_num += 1
 	# now that we have all the answers, figure out the percentages
 	a_num = 0
