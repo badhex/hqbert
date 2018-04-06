@@ -25,12 +25,12 @@ def solve(question, answers):
 	msg = "```"
 	for k, v in results.items():
 		result[k] = v.get()
-		msg += ("\r\n" if k > 1 else "") + rtypes[k] + ":"
+		msg += rtypes[k] + ":"
 		best = sorted( result[k], key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )
 		correct = best[-1]
+		votes.append( correct[1] )
 		for r in result[k]:
 			# get the index of the highest percent
-			votes.append( correct[1] )
 			msg += "# %s - %6s - %s %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0], ("✓" if correct[1] == r[1] else ""))
 
 	msg += "```"
@@ -55,16 +55,24 @@ def calc_weight_google_glance(question, answers):
 	results = google_search( question )
 	result = [(), (), ()]
 	total_i = 0
-	for item in results["items"]:
+	if "items" in results:
+		for item in results["items"]:
+			a_num = 0
+			for a in answers:
+				junk, junk, a_i = result[a_num] if len( result[a_num] ) else (0, 0, 0)
+				add1 = item['title'].lower().count( a.lower().replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ) )
+				add2 = item['snippet'].lower().count( a.lower().replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ) )
+				a_i += add1 + add2
+				total_i += add1 + add2
+				result[a_num] = (a, a_num, a_i)
+				a_num += 1
+	else:
+		print("Search at a glance error: Items not in results")
 		a_num = 0
 		for a in answers:
-			junk, junk, a_i = result[a_num] if len( result[a_num] ) else (0, 0, 0)
-			add1 = item['title'].lower().count( a.lower().replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ) )
-			add2 = item['snippet'].lower().count( a.lower().replace( '"', "" ).replace( ',', "" ).replace( "‘", "" ).replace( ".", "" ) )
-			a_i += add1 + add2
-			total_i += add1 + add2
-			result[a_num] = (a, a_num, a_i)
+			result[a_num] = (a, a_num, 0)
 			a_num += 1
+
 	# now that we have all the answers, figure out the percentages
 	a_num = 0
 	for r in result:
