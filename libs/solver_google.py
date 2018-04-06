@@ -11,17 +11,19 @@ rtypes = {
 	3: "Google full quick search"
 }
 
+
 def solve(question, answers):
 	start_time = time.time()
 
 	result = {}
+	votes = []
+
 	results = {
 		1: spool.apply_async( calc_weight_google_glance, ( question, answers ) ),
 		2: spool.apply_async( calc_weight_google_results, ( question, answers ) ),
 		3: spool.apply_async( calc_weight_google_glance, ("%s %s" % (question, " ".join(answers)), answers) )
 	}
 
-	votes = []
 	msg = "```"
 	for k, v in results.items():
 		result[k] = v.get()
@@ -33,8 +35,14 @@ def solve(question, answers):
 			msg += "# %s - %6s - %s %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0], ("✓" if correct[1] == r[1] and (correct[3] > 0.0 or any( word in question for word in Config.reversewords )) else ""))
 	msg += "```"
 
+	if len(votes):
+		c = max( votes, key=votes.count )
+	else:
+		print( "No votes, just guessing..." )
+		c = result[1].popitem()[1]
+
 	# return most frequently voted for
-	answer, num, raw, confidence = result[1][max( votes, key=votes.count )]
+	answer, num, raw, confidence = result[1][c]
 
 	return {'answer': answer, 'num': num, 'confidence': confidence, 'msg': msg, 'votes': votes.count(num)}
 
