@@ -25,12 +25,10 @@ def solve(question, answers):
 	msg = "```"
 	for k, v in results.items():
 		set = v.get()
-		result[k] = set
+		result[k] = set[0]
 
 		msg += ("\r\n" if k > 1 else "") + rtypes[k] + ":"
-		if Config.debug:
-			print("Set:", set)
-		for r in set:
+		for r in set[0]:
 			# get the index of the highest percent
 			best = sorted( r, key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )
 			correct = best[-1]
