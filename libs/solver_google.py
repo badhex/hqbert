@@ -24,14 +24,12 @@ def solve(question, answers):
 	votes = []
 	msg = "```"
 	for k, v in results.items():
-		set = v.get()
-		result[k] = set[0]
-
+		result[k] = v.get()
 		msg += ("\r\n" if k > 1 else "") + rtypes[k] + ":"
-		for r in set[0]:
+		best = sorted( result[k], key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )
+		correct = best[-1]
+		for r in result[k]:
 			# get the index of the highest percent
-			best = sorted( r, key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )
-			correct = best[-1]
 			votes.append( correct[1] )
 			msg += "# %s - %6s - %s %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0], ("✓" if correct[1] == r[1] else ""))
 
