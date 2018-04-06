@@ -1,3 +1,4 @@
+from random import randint
 from config import Config
 from googleapiclient.discovery import build
 from multiprocessing.pool import ThreadPool
@@ -39,7 +40,7 @@ def solve(question, answers):
 		c = max( votes, key=votes.count )
 	else:
 		print( "No votes, just guessing..." )
-		c = result[1].popitem()[1]
+		c = randint(1, 3)
 
 	# return most frequently voted for
 	answer, num, raw, confidence = result[1][c]
