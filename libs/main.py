@@ -122,8 +122,7 @@ async def main_task():
 							solution = solver.solve( q, ans )
 
 							if not Config.debug:
-								await G.client.send_message( channel,
-								                             "I'm " + ("{:.1%}".format( solution['confidence'] )) + " sure the answer is - #" + str( solution['num'] + 1 ) + " " + solution['answer'] )
+								await G.client.send_message( channel, "I have %s vote%s that the answer is - #%s %s" % (str(solution['votes']), ("s" if solution['votes'] > 1 else ""), str( solution['num'] + 1 ), solution['answer']) )
 								await G.client.send_message( channel, solution['msg'] )
 							resultscreen = True
 							waitforblack = True
@@ -162,7 +161,7 @@ async def main_task():
 
 @G.client.event
 async def on_ready():
-	print( 'Connected to Discord as', G.client.user.name, "#%s" % (G.client.user.id, ))
+	print( 'Connected to Discord as', G.client.user.name, "#%s" % (G.client.user.id,) )
 
 
 def start():

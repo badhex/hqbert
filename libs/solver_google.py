@@ -5,39 +5,41 @@ import time
 
 spool = ThreadPool( processes=5 )
 
+rtypes = {
+	1: "Google quick search",
+	2: "Google result count",
+	3: "Google full quick search"
+}
 
 def solve(question, answers):
 	start_time = time.time()
-	async_result = spool.apply_async( calc_weight_google_glance, ( question, answers ) )
-	async_result2 = spool.apply_async( calc_weight_google_results, ( question, answers ) )
-	async_result3 = spool.apply_async( calc_weight_google_results, ("%s%s" % (question, " ".join(answers)), answers) )
 
-	# search google for the question and count the occurances of the answer
-	result = async_result.get()
-	sorted_by_second = sorted( result, key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )
-	answer, num, raw, confidence = sorted_by_second.pop()
-	print( "--- %s seconds ---" % (round( time.time() - start_time, 2 )), "calc_weight_google_glance:", "{:.1%}".format( confidence ), num, answer, "raw:", result )
-	result2 = async_result2.get()
-	if raw < 10 and confidence < 0.34:
-		sorted_by_second = sorted( result2, key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )
-		answer, num, raw, confidence = sorted_by_second.pop()
-		print( "--- %s seconds ---" % (round( time.time() - start_time, 2 )), "calc_weight_google_results:", "{:.1%}".format( confidence ), num, answer, "raw:", result )
+	result = {}
+	results = {
+		1: spool.apply_async( calc_weight_google_glance, ( question, answers ) ),
+		2: spool.apply_async( calc_weight_google_results, ( question, answers ) ),
+		3: spool.apply_async( calc_weight_google_glance, ("%s %s" % (question, " ".join(answers)), answers) ),
+	}
 
-	# new search type searches whole question and all answers together
-	result3 = async_result3.get()
+	votes = []
+	msg = "```"
+	for k, r in results.items():
+		result[k] = r.get()
 
-	msg = "```Google quick search:\r\n"
-	for r in result:
-		msg += "# %s - %6s - %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0])
-	msg += "\r\nGoogle result count:\r\n"
-	for r in result2:
-		msg += "# %s - %6s - %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0])
-	msg += "\r\nGoogle full quick search:\r\n"
-	for r in result3:
-		msg += "# %s - %6s - %s\r\n" % (str( r[1] + 1 ), "{:.1%}".format( r[3] ), r[0])
+		# get the index of the highest percent
+		sorted_by_second = sorted( result[k], key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )
+		correct = sorted_by_second[-1]
+		votes.append(correct[1])
+
+		msg += ("\r\n" if k > 1 else "") + rtypes[k] + ":"
+		for re in result[k]:
+			msg += "# %s - %6s - %s %s\r\n" % (str( re[1] + 1 ), "{:.1%}".format( re[3] ), re[0], ("✓" if correct[1] == re[1] else ""))
 	msg += "```"
 
-	return {'answer': answer, 'num': num, 'confidence': confidence, 'msg': msg}
+	# return most frequently voted for
+	answer, num, raw, confidence = result[max( votes, key=votes.count )]
+
+	return {'answer': answer, 'num': num, 'confidence': confidence, 'msg': msg, 'votes': votes.count(num)}
 
 
 def google_search(search_term, **kwargs):
