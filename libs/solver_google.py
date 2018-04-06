@@ -7,7 +7,7 @@ spool = ThreadPool( processes=5 )
 
 
 def solve(question, answers):
-	gamestart = time.time()
+	start_time = time.time()
 	async_result = spool.apply_async( calc_weight_google_glance, ( question, answers ) )
 	async_result2 = spool.apply_async( calc_weight_google_results, (question, answers) )
 	async_result3 = spool.apply_async( calc_weight_google_glance_grouped, (question, answers) )
