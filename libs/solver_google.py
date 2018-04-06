@@ -18,7 +18,7 @@ def solve(question, answers):
 	results = {
 		1: spool.apply_async( calc_weight_google_glance, ( question, answers ) ),
 		2: spool.apply_async( calc_weight_google_results, ( question, answers ) ),
-		3: spool.apply_async( calc_weight_google_glance, ("%s %s" % (question, " ".join(answers)), answers) ),
+		3: spool.apply_async( calc_weight_google_glance, ("%s %s" % (question, " ".join(answers)), answers) )
 	}
 
 	votes = []
@@ -27,8 +27,7 @@ def solve(question, answers):
 		result[k] = r.get()
 
 		# get the index of the highest percent
-		sorted_by_second = sorted( result[k], key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )
-		correct = sorted_by_second[-1]
+		correct = sorted( result[k], key=lambda tup: tup[3], reverse=(any( word in question for word in Config.reversewords )) )[-1]
 		votes.append(correct[1])
 
 		msg += ("\r\n" if k > 1 else "") + rtypes[k] + ":"
@@ -36,6 +35,8 @@ def solve(question, answers):
 			msg += "# %s - %6s - %s %s\r\n" % (str( re[1] + 1 ), "{:.1%}".format( re[3] ), re[0], ("✓" if correct[1] == re[1] else ""))
 	msg += "```"
 
+	if Config.debug:
+		print("Result: ", result[max( votes, key=votes.count )])
 	# return most frequently voted for
 	answer, num, raw, confidence = result[max( votes, key=votes.count )]
 
