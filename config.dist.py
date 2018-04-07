@@ -24,6 +24,9 @@ class Config:
 	# These words make the bot send an google static map image
 	direction_words = ['farthest', 'located', 'distance', 'north', 'south', 'east', 'west', 'found', 'location']
 
+	class ADB:
+		path = '/opt/genymobile/genymotion/tools/'
+
 	class DB:
 		enabled = False
 		host = 'localhost'
