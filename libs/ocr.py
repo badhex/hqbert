@@ -83,21 +83,18 @@ class Screen:
 					pass
 		return total
 
-	def __text__(self, multiline=False):
+	def __text__(self, multiline=False, expected=3):
 		if not multiline:
-			return " ".join( pytesseract.image_to_string( self.im ).split() )  # .replace( "— ", "" )
+			return " ".join( pytesseract.image_to_string( self.im ).split() )
 		else:
-			txt = pytesseract.image_to_string( self.im, lang='eng', config='-psm 3' ).splitlines()
-			if not txt:
+			txt = pytesseract.image_to_string( self.im, config='-psm 3' ).splitlines()
+			if not txt and len( list( filter( None, txt ) ) ) != expected:
 				# Try enhancing the image contrast
 				contrast = ImageEnhance.Contrast( self.im )
 				retry = contrast.enhance( 2 )
-				txt = pytesseract.image_to_string( retry, lang='eng', config='-psm 3' ).splitlines()
-				if not txt:
-					# Try making the image B&W
-					retry = retry.convert( 'L' )
-					txt = pytesseract.image_to_string( retry, lang='eng', config='-psm 3' ).splitlines()
-			if not txt:
+				retry = retry.convert( 'L' )
+				txt = pytesseract.image_to_string( retry, config='-psm 3' ).splitlines()
+			if not txt and len( list( filter( None, txt ) ) ) != expected:
 				# check for single character lines
 				w, h = self.im.size
 				count = 0
@@ -106,7 +103,7 @@ class Screen:
 						break
 					box = (0, i, int( w / 2 ), i + int( h / 3 ))
 					a = self.im.crop( box )
-					ans = pytesseract.image_to_string( a, lang='eng', config='-psm 10' ).splitlines()
+					ans = pytesseract.image_to_string( a, config='-psm 10' ).splitlines()
 					if ans:
 						txt.append( ans[0] )
 						count += 1
