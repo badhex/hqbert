@@ -85,18 +85,19 @@ class Screen:
 
 	def __text__(self, multiline=False, expected=3):
 		if not multiline:
-			return " ".join( pytesseract.image_to_string( self.im ).split() )
+			return " ".join( pytesseract.image_to_string( self.im ).split() )  # .replace( "— ", "" )
 		else:
-			txt = pytesseract.image_to_string( self.im, lang='eng', config='-psm 3' ).splitlines()
-			print("First pass:", list( filter( None, txt ) ))
-			if not txt and len( list( filter( None, txt ) ) ) != expected:
+			txt = pytesseract.image_to_string( self.im, config='-psm 3' ).splitlines()
+			if not txt or len(list( filter( None, txt ) )) != expected:
 				# Try enhancing the image contrast
-				retry = self.im.convert( 'L' )
-				contrast = ImageEnhance.Contrast( retry )
+				contrast = ImageEnhance.Contrast( self.im )
 				retry = contrast.enhance( 2 )
 				txt = pytesseract.image_to_string( retry, config='-psm 3' ).splitlines()
-				print( "Second pass:", list( filter( None, txt ) ) )
-			if not txt and len( list( filter( None, txt ) ) ) != expected:
+				if not txt or len(list( filter( None, txt ) )) != expected:
+					# Try making the image B&W
+					retry = retry.convert( 'L' )
+					txt = pytesseract.image_to_string( retry, config='-psm 3' ).splitlines()
+			if not txt or len(list( filter( None, txt ) )) != expected:
 				# check for single character lines
 				w, h = self.im.size
 				count = 0
@@ -109,11 +110,10 @@ class Screen:
 					if ans:
 						txt.append( ans[0] )
 						count += 1
-			print( "Final pass:", list( filter( None, txt ) ) )
 			return list( filter( None, txt ) )
 
-	def text(self, multiline=False):
-		async = pool.apply_async( self.__text__, (multiline,) )
+	def text(self, multiline=False, expected=3):
+		async = pool.apply_async( self.__text__, (multiline, expected) )
 		return async.get()
 
 	# returns the index highlighted
