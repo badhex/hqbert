@@ -87,12 +87,12 @@ class Screen:
 		if not multiline:
 			return " ".join( pytesseract.image_to_string( self.im ).split() )
 		else:
-			txt = pytesseract.image_to_string( self.im, config='-psm 3' ).splitlines()
+			txt = pytesseract.image_to_string( self.im, lang='eng', config='-psm 3' ).splitlines()
 			if not txt and len( list( filter( None, txt ) ) ) != expected:
 				# Try enhancing the image contrast
 				retry = self.im.convert( 'L' )
 				contrast = ImageEnhance.Contrast( retry )
-				retry = contrast.enhance( 1.5 )
+				retry = contrast.enhance( 2 )
 				txt = pytesseract.image_to_string( retry, config='-psm 3' ).splitlines()
 			if not txt and len( list( filter( None, txt ) ) ) != expected:
 				# check for single character lines
