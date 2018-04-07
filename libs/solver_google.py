@@ -38,12 +38,11 @@ def solve(question, answers):
 
 	if len(votes):
 		c = max( votes, key=votes.count )
+		answer, num, raw, confidence = result[1][c]
 	else:
 		print( "No votes, just guessing..." )
-		c = randint(1, 3)
-
-	# return most frequently voted for
-	answer, num, raw, confidence = result[1][c]
+		c = randint(0, 2)
+		answer, num, raw, confidence = (answers[c], c, 0.0, 0.0)
 
 	return {'answer': answer, 'num': num, 'confidence': confidence, 'msg': msg, 'votes': votes.count(num)}
 
