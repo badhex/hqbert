@@ -88,12 +88,14 @@ class Screen:
 			return " ".join( pytesseract.image_to_string( self.im ).split() )
 		else:
 			txt = pytesseract.image_to_string( self.im, lang='eng', config='-psm 3' ).splitlines()
+			print("First Pass:", txt)
 			if not txt and len( list( filter( None, txt ) ) ) != expected:
 				# Try enhancing the image contrast
-				retry = self.im.convert( 'L' )
-				contrast = ImageEnhance.Contrast( retry )
+				contrast = ImageEnhance.Contrast( self.im )
 				retry = contrast.enhance( 2 )
-				txt = pytesseract.image_to_string( retry, config='-psm 3' ).splitlines()
+				retry = retry.convert( 'L' )
+				txt = pytesseract.image_to_string( retry, lang='eng', config='-psm 3' ).splitlines()
+				print( "Second Pass:", txt )
 			if not txt and len( list( filter( None, txt ) ) ) != expected:
 				# check for single character lines
 				w, h = self.im.size
@@ -107,10 +109,11 @@ class Screen:
 					if ans:
 						txt.append( ans[0] )
 						count += 1
+			print( "Final:", txt )
 			return list( filter( None, txt ) )
 
-	def text(self, multiline=False):
-		async = pool.apply_async( self.__text__, (multiline,) )
+	def text(self, multiline=False, expected=3):
+		async = pool.apply_async( self.__text__, (multiline, expected) )
 		return async.get()
 
 	# returns the index highlighted
