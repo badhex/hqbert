@@ -54,6 +54,8 @@ async def main_task():
 							await G.client.send_message( channel, "The next game starts " + gamedata[1] + " and has a " + gamedata[2] + "! See you then!" )
 						print( "Sleeping for:", ((nextgame - t).seconds + 120), "seconds" )
 						await asyncio.sleep( ((nextgame - t).seconds + 120) )
+				else:
+					gamestarted = True
 			except:
 				gamestarted = True
 		else:
