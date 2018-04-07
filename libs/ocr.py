@@ -88,14 +88,12 @@ class Screen:
 			return " ".join( pytesseract.image_to_string( self.im ).split() )
 		else:
 			txt = pytesseract.image_to_string( self.im, lang='eng', config='-psm 3' ).splitlines()
-			print("First pass:", list( filter( None, txt ) ))
 			if not txt and len( list( filter( None, txt ) ) ) != expected:
 				# Try enhancing the image contrast
 				retry = self.im.convert( 'L' )
 				contrast = ImageEnhance.Contrast( retry )
 				retry = contrast.enhance( 2 )
 				txt = pytesseract.image_to_string( retry, config='-psm 3' ).splitlines()
-				print( "Second pass:", list( filter( None, txt ) ) )
 			if not txt and len( list( filter( None, txt ) ) ) != expected:
 				# check for single character lines
 				w, h = self.im.size
@@ -109,7 +107,6 @@ class Screen:
 					if ans:
 						txt.append( ans[0] )
 						count += 1
-			print( "Final pass:", list( filter( None, txt ) ) )
 			return list( filter( None, txt ) )
 
 	def text(self, multiline=False):
