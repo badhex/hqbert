@@ -130,7 +130,7 @@ async def main_task():
 									if solution['map']:
 										e = discord.Embed()
 										e.set_image( url=solution['map'] )
-										await G.client.send_message( channel, e )
+										await G.client.send_message( channel, embed=e )
 								except:
 									print("Failed to send image to channel!")
 							resultscreen = True
