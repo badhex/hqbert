@@ -26,7 +26,7 @@ def solve(question, answers):
 		colors = {0:"red",
 		          1:"green",
 		          2:"blue"}
-		for i in range(0, 2):
+		for i in range(0, 3):
 			a = answers[i]
 			if '/' in a:
 				for sa in answers[i].split('/'):
