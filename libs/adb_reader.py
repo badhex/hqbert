@@ -9,8 +9,8 @@ screens = {
 
 class HQscreen:
 	def __init__(self):
-		self.__xml__ = run_asyncio_commands( [run_command_shell( "\"" + Config.ADB.path + "adb.exe\" exec-out uiautomator dump /dev/tty" ), ], 1 )[0]
-		self.soup = BeautifulSoup( self.__xml__[0], "lxml" )
+		self.__xml__ = run_asyncio_commands( [run_command_shell( Config.ADB.path + " exec-out uiautomator dump /dev/tty" ), ], 1 )[0]
+		self.soup = BeautifulSoup( self.__xml__, "lxml" )
 		self.displayed = None
 		self.next_game = None
 
@@ -26,6 +26,5 @@ class HQscreen:
 		uniq_filename = str( datetime.datetime.now().date() ) + '_' + str( datetime.datetime.now().time() ).replace( ':', '.' ) + ".xml"
 		with open( uniq_filename, 'w' ) as f:
 			f.write( self.__xml__ )
-
 
 		print("XML Saved as:", uniq_filename)
