@@ -19,7 +19,10 @@ class Config:
 	question_bbox = (0,0,100,200)
 	answers_bbox = (0,0,100,200)
 
+	# These words make the bot reverse its answer selection
 	reversewords = ['not']
+	# These words make the bot send an google static map image
+	direction_words = ['farthest', 'located', 'distance', 'north', 'south', 'east', 'west', 'found', 'location']
 
 	class DB:
 		enabled = False

@@ -3,7 +3,7 @@
 from libs import solver_google
 
 if __name__ == '__main__':
-	question = "Ophthalmology is a branch of science dealing with which part of the body"
-	answers = ("Eyes", "Feet", "Hands")
+	question = "Which pair of countries can be found on the Horn of Africa?"
+	answers = ("Egypt / Ethiopia", "Ethiopia / Eritrea", "Eritrea / Egypt")
 	solution = solver_google.solve( question, answers )
 	print( solution )

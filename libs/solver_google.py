@@ -1,6 +1,7 @@
 from random import randint
 from config import Config
 from googleapiclient.discovery import build
+from motionless import DecoratedMap, AddressMarker
 from multiprocessing.pool import ThreadPool
 import time
 
@@ -18,6 +19,22 @@ def solve(question, answers):
 
 	result = {}
 	votes = []
+	gmap = None
+
+	if any(word in question for word in Config.direction_words):
+		dmap = DecoratedMap(key=Config.gapi)
+		colors = {0:"red",
+		          1:"green",
+		          2:"blue"}
+		for i in range(0, 2):
+			a = answers[i]
+			if '/' in a:
+				for sa in answers[i].split('/'):
+					dmap.add_marker( AddressMarker( sa.strip(), label=str(i+1), color=colors[i] ) )
+			else:
+				dmap.add_marker( AddressMarker( a, label=str(i+1), color=colors[i] ) )
+
+		gmap = dmap.generate_url()
 
 	results = {
 		1: spool.apply_async( calc_weight_google_glance, ( question, answers ) ),
@@ -44,7 +61,7 @@ def solve(question, answers):
 		c = randint(0, 2)
 		answer, num, raw, confidence = (answers[c], c, 0.0, 0.0)
 
-	return {'answer': answer, 'num': num, 'confidence': confidence, 'msg': msg, 'votes': votes.count(num)}
+	return {'answer': answer, 'num': num, 'confidence': confidence, 'msg': msg, 'votes': votes.count(num), 'map': gmap}
 
 
 def google_search(search_term, **kwargs):

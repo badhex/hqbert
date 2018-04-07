@@ -126,6 +126,13 @@ async def main_task():
 							if not Config.debug:
 								await G.client.send_message( channel, "I have %s vote%s that the answer is - #%s %s" % (str(solution['votes']), ("s" if solution['votes'] != 1 else ""), str( solution['num'] + 1 ), solution['answer']) )
 								await G.client.send_message( channel, solution['msg'] )
+								try:
+									if solution['map']:
+										e = discord.Embed()
+										e.set_image( url=solution['map'] )
+										await G.client.send_message( channel, e )
+								except:
+									print("Failed to send image to channel!")
 							resultscreen = True
 							waitforblack = True
 							if Config.debug:
