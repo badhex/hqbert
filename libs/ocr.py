@@ -85,7 +85,7 @@ class Screen:
 
 	def __text__(self, multiline=False, expected=3):
 		if not multiline:
-			return " ".join( pytesseract.image_to_string( self.im ).split() )
+			return " ".join( pytesseract.image_to_string( self.im, lang='eng' ).split() )
 		else:
 			txt = pytesseract.image_to_string( self.im, lang='eng', config='-psm 3' ).splitlines()
 			print("First Pass:", txt)
