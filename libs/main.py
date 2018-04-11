@@ -169,6 +169,12 @@ async def main_task():
 
 			await asyncio.sleep( 0.5 )
 
+@G.client.event
+async def on_message(message):
+	print("Message from", message.author.id, "-", message.content)
+	# if message.author.id != "hqbert#3024" and message.content.startswith( config.COMMANDPREFIX ):
+	# 	return
+
 
 @G.client.event
 async def on_ready():
