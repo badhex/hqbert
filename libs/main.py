@@ -1,5 +1,6 @@
 import discord
 import asyncio
+import string
 import time
 import traceback
 import dateparser
@@ -173,13 +174,13 @@ async def main_task():
 
 @G.client.event
 async def on_message(message):
-	print("Message from", message.author.id, "-", message.content)
 	if message.author.id == 320291221782265857 or message.author == G.client.user:
 		return
+	print( "Message from", message.author.id, "-", message.content )
 	channel = discord.Object( id=Config.discord_channel )
-	if message.content.lower().strip() == "hi bot!" and message.author not in G.saidhito:
+	if message.content.lower().translate(None, string.punctuation).strip() == "hi bot" and message.author not in G.saidhito:
 		G.saidhito.append(message.author)
-		msg = 'Hello {0.author.mention}!'.format( message )
+		msg = 'Hello {0.author.mention}.'.format( message )
 		await G.client.send_message(channel, msg)
 	cmd, junk, m = message.content.partition(" ")
 	if cmd not in Config.cmd_prefix:
