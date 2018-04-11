@@ -14,6 +14,7 @@ from libs.db import writeq
 
 class G:
 	client = discord.Client()
+	saidhito = []
 
 
 async def main_task():
@@ -70,6 +71,7 @@ async def main_task():
 		# Game starting
 		###########################################################
 		if not Config.debug:
+			G.saidhito = []
 			await G.client.send_message( channel, "Hey guys, It's HQ time!!!!" )
 			await G.client.change_presence( game=discord.Game( name='HQ Trivia' ) )
 
@@ -172,8 +174,15 @@ async def main_task():
 @G.client.event
 async def on_message(message):
 	print("Message from", message.author.id, "-", message.content)
-	# if message.author.id != "hqbert#3024" and message.content.startswith( config.COMMANDPREFIX ):
-	# 	return
+	if message.author.id == 320291221782265857:
+		return
+	channel = discord.Object( id=Config.discord_channel )
+	if message.content.lower().strip() == "hi bot!" and message.author not in G.saidhito:
+		G.saidhito.append(message.author)
+		await G.client.send_message(channel, "hi " + message.author + "!")
+	cmd, junk, m = message.content.partition(" ")
+	if cmd not in Config.cmd_prefix:
+		return
 
 
 @G.client.event
