@@ -25,7 +25,8 @@ class Config:
 	direction_words = ['farthest', 'located', 'distance', 'north', 'south', 'east', 'west', 'found', 'location']
 
 	class ADB:
-		path = '/opt/genymobile/genymotion/tools/'
+		# location of adb
+		path = '/opt/genymobile/genymotion/tools/adb'
 
 	class DB:
 		enabled = False

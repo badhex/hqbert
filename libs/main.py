@@ -39,7 +39,7 @@ async def main_task():
 				print( "Game Data:", gamedata )
 				if len( gamedata ) == 3 and gamedata[0] == "NEXT GAME":
 					t = datetime.today()
-					nextgame = dateparser.parse( gamedata[1].replace( "—", "" ), languages=['en'], date_formats=['%I%p CDT', '%m/%d %I%p CDT'] )
+					nextgame = dateparser.parse( gamedata[1].replace( "—", "" ), languages=['en'], date_formats=['%I%p CDT', '%m/%d %I%p CDT', '%I%M%p CDT'] )
 					if not nextgame:
 						gamestarted = True
 						if Config.debug:
