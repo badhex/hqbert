@@ -178,7 +178,8 @@ async def on_message(message):
 		return
 	print( "Message from", message.author.id, "-", message.content )
 	channel = discord.Object( id=Config.discord_channel )
-	if message.content.lower().translate(None, string.punctuation).strip() == "hi bot" and message.author not in G.saidhito:
+	translator = str.maketrans( '', '', string.punctuation )
+	if message.content.lower().translate(translator).strip() == "hi bot" and message.author not in G.saidhito:
 		G.saidhito.append(message.author)
 		msg = 'Hello {0.author.mention}.'.format( message )
 		await G.client.send_message(channel, msg)
