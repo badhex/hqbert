@@ -45,7 +45,7 @@ async def main_task():
 						if Config.debug:
 							print( "No Date Time found." )
 					else:
-						nextgame += timedelta()
+						# nextgame += timedelta()
 						if t.hour >= nextgame.hour:
 							print( "Game starts in the past, advancing a day..." )
 							nextgame += timedelta( days=1 )
@@ -56,7 +56,9 @@ async def main_task():
 						await asyncio.sleep( ((nextgame - t).seconds + 120) )
 				else:
 					gamestarted = True
-			except:
+			except Exception as e:
+				print(traceback.format_exc())
+				print(e)
 				gamestarted = True
 		else:
 			gamestarted = True
