@@ -59,9 +59,9 @@ class Screen:
 		# perform the weighted average of each channel:
 		# the *index* is the channel value, and the *value* is its weight
 		return (
-			sum( i * w for i, w in enumerate( r ) ) / sum( r ),
-			sum( i * w for i, w in enumerate( g ) ) / sum( g ),
-			sum( i * w for i, w in enumerate( b ) ) / sum( b )
+			(sum( i * w for i, w in enumerate( r ) ) / sum( r )) if sum( r ) > 0 else 0,
+			(sum( i * w for i, w in enumerate( g ) ) / sum( g )) if sum( g ) > 0 else 0,
+			(sum( i * w for i, w in enumerate( b ) ) / sum( b )) if sum( b ) > 0 else 0
 		)
 
 	# accepts int as step for how man pixels to step
